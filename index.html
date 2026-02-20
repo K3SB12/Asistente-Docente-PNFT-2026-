@@ -3,26 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente Docente PNFT · MEP 2026 · PROFESIONAL</title>
-    <!-- Tailwind CSS -->
+    <title>Asistente Docente PNFT · MEP 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        * { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        * { font-family: 'Poppins', sans-serif; }
         
         :root {
             --primary-teal: #09b7ae;
-            --secondary-teal: #0bd2ce;
             --primary-dark: #014d6b;
-            --secondary-dark: #0b6284;
             --primary-purple: #45258f;
-            --primary-green: #9ed16f;
         }
         
         .saber-chip {
-            user-select: none;
             cursor: pointer;
             transition: all 0.2s;
             background: #f3f4f6;
@@ -30,6 +24,8 @@
             padding: 0.5rem 1rem;
             border-radius: 9999px;
             font-size: 0.875rem;
+            display: inline-block;
+            margin: 0.25rem;
         }
         
         .saber-chip.selected {
@@ -38,25 +34,24 @@
             border-color: var(--primary-dark);
         }
         
-        .video-result {
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
-            background: white;
-            border-radius: 0.75rem;
-            padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            cursor: pointer;
-        }
-        
-        .video-result:hover {
-            transform: translateX(4px);
-            border-left-color: var(--primary-teal);
-            box-shadow: 0 8px 16px rgba(1,77,107,0.1);
-        }
-        
         .modal-overlay {
             background: rgba(0,0,0,0.6);
             backdrop-filter: blur(8px);
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 1.5rem;
+            max-width: 32rem;
+            width: 90%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px black;
         }
         
         .tab-btn.active {
@@ -70,32 +65,24 @@
 <body class="bg-gray-50 p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
         <!-- HEADER -->
-        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
-            <div class="flex items-center gap-4">
-                <div class="w-16 h-16 bg-gradient-to-br from-[#014d6b] to-[#45258f] rounded-2xl flex items-center justify-center">
-                    <i class="fas fa-laptop-code text-white text-2xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold text-[#014d6b]">Asistente Docente <span class="text-[#45258f]">PNFT</span></h1>
-                    <p class="text-sm text-gray-600">Programa Nacional de Formación Tecnológica · MEP 2026</p>
-                    <p class="text-xs text-[#09b7ae] mt-1">186 saberes · IA · DUA · Google Modo AI</p>
-                </div>
-            </div>
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold text-[#014d6b]">Asistente Docente <span class="text-[#45258f]">PNFT</span></h1>
+            <p class="text-sm text-gray-600">Programa Nacional de Formación Tecnológica · MEP 2026</p>
         </div>
 
         <!-- TABS -->
         <div class="flex gap-2 mb-6 border-b">
             <button id="tabPlanBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-white text-[#014d6b] border-b-3 border-[#014d6b] font-semibold">📅 Planificador</button>
-            <button id="tabRecursosBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600">🎯 Recursos DUA</button>
-            <button id="tabAdminBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600">⚙️ Administración</button>
+            <button id="tabRecursosBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600">📺 Videos</button>
+            <button id="tabAdminBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600">📋 Bitácora</button>
         </div>
 
-        <!-- ========== PESTAÑA PLANIFICADOR ========== -->
+        <!-- ========== PLANIFICADOR ========== -->
         <div id="tabPlan" class="tab-content">
-            <!-- Selectores -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div class="bg-white p-4 rounded-xl shadow-md">
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Ciclo</label>
+            <!-- Selector ciclo/nivel -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="bg-white p-4 rounded-xl shadow">
+                    <label class="block text-sm font-medium mb-2">Ciclo</label>
                     <select id="cicloSelect" class="w-full p-3 border rounded-xl">
                         <option value="preescolar">Preescolar</option>
                         <option value="I">I Ciclo</option>
@@ -103,210 +90,121 @@
                         <option value="III">III Ciclo</option>
                     </select>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-md">
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Nivel</label>
+                <div class="bg-white p-4 rounded-xl shadow">
+                    <label class="block text-sm font-medium mb-2">Nivel</label>
                     <select id="nivelSelect" class="w-full p-3 border rounded-xl"></select>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-md flex items-center justify-center">
-                    <span class="text-3xl font-bold text-[#014d6b]">186</span>
-                    <span class="ml-2 text-gray-600">saberes</span>
                 </div>
             </div>
 
             <!-- Módulos -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white rounded-2xl shadow-xl p-6">
+                <div class="bg-white rounded-xl shadow-lg p-6">
                     <h3 class="text-lg font-bold text-[#014d6b] mb-4">📘 Módulo 1</h3>
                     <div id="modulo1Container" class="space-y-4 max-h-[500px] overflow-y-auto"></div>
                 </div>
-                <div class="bg-white rounded-2xl shadow-xl p-6">
+                <div class="bg-white rounded-xl shadow-lg p-6">
                     <h3 class="text-lg font-bold text-[#0b6284] mb-4">📗 Módulo 2</h3>
                     <div id="modulo2Container" class="space-y-4 max-h-[500px] overflow-y-auto"></div>
                 </div>
             </div>
 
-            <!-- Barra de selección -->
-            <div class="bg-gradient-to-r from-[#014d6b] to-[#0b6284] rounded-2xl p-6 mb-8 text-white">
+            <!-- Saberes seleccionados -->
+            <div class="bg-[#014d6b] rounded-xl p-6 mb-8 text-white">
                 <div class="flex flex-wrap items-center gap-4">
                     <span class="bg-white/20 px-4 py-2 rounded-full">Seleccionados: <span id="contadorSel">0</span>/2</span>
                     <div id="saberesSeleccionadosList" class="flex flex-wrap gap-2 flex-1"></div>
-                    <button id="generarPromptBtn" class="bg-white text-[#014d6b] px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition flex items-center gap-2">
-                        <i class="fas fa-wand-magic-sparkles"></i> Generar prompt
-                    </button>
-                    <button id="abrirModalBtn" class="bg-[#9ed16f] text-[#014d6b] px-6 py-3 rounded-xl font-semibold hover:bg-green-400 transition flex items-center gap-2">
-                        <i class="fas fa-google"></i> Google Modo AI
+                    <button id="generarPromptBtn" class="bg-white text-[#014d6b] px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition">
+                        Generar prompt
                     </button>
                 </div>
             </div>
 
-            <!-- Indicadores -->
-            <div id="indicadoresContainer" class="bg-white rounded-2xl shadow-xl p-6 mb-8 hidden">
-                <h3 class="text-xl font-bold text-[#014d6b] mb-6">📋 Indicadores de evaluación</h3>
+            <!-- INDICADORES -->
+            <div id="indicadoresContainer" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
+                <h3 class="text-xl font-bold text-[#014d6b] mb-6">📋 Indicadores de logro y evaluación</h3>
                 <div id="indicadoresInner"></div>
             </div>
 
-            <!-- Prompt -->
-            <div class="bg-gray-900 rounded-2xl shadow-xl p-6 mb-8">
+            <!-- PROMPT -->
+            <div class="bg-gray-900 rounded-xl shadow-lg p-6 mb-8">
                 <div class="flex justify-between items-center mb-4">
-                    <span class="text-gray-300 font-mono">🤖 Prompt para IA:</span>
-                    <button id="copiarPrompt" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
+                    <span class="text-gray-300">🤖 Prompt:</span>
+                    <button id="copiarPrompt" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm">
                         <i class="far fa-copy mr-2"></i>Copiar
                     </button>
                 </div>
-                <textarea id="promptSalida" rows="6" class="w-full bg-gray-800 text-gray-100 p-4 rounded-xl font-mono text-sm" readonly>Selecciona saberes y haz clic en Generar prompt</textarea>
+                <textarea id="promptSalida" rows="6" class="w-full bg-gray-800 text-gray-100 p-4 rounded-xl text-sm" readonly>Selecciona saberes y haz clic en Generar prompt</textarea>
             </div>
         </div>
 
-        <!-- ========== PESTAÑA RECURSOS DUA (CORREGIDA) ========== -->
+        <!-- ========== VIDEOS (SOLO LUPA) ========== -->
         <div id="tabRecursos" class="tab-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Buscador YouTube con saberes -->
-                <div class="bg-white rounded-2xl shadow-xl p-6">
-                    <h2 class="text-xl font-bold text-[#014d6b] flex items-center gap-2 mb-4">
-                        <i class="fab fa-youtube text-red-600"></i> YouTube inclusivo
-                    </h2>
-                    
-                    <div class="bg-blue-50 p-4 rounded-xl mb-4">
-                        <p class="text-sm font-medium text-[#014d6b] mb-2">Saberes seleccionados:</p>
-                        <div id="saberesParaYoutube" class="flex flex-wrap gap-2 min-h-[40px]">
-                            <!-- Se llena dinámicamente -->
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="youtubeSearch" placeholder="Término de búsqueda" class="flex-1 p-3 border rounded-xl">
-                        <button id="buscarYoutubeBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition">
-                            <i class="fab fa-youtube"></i> Buscar
-                        </button>
-                    </div>
-
-                    <div id="youtubeResultados" class="space-y-3 max-h-96 overflow-y-auto">
-                        <!-- Resultados dinámicos -->
-                    </div>
-                </div>
-
-                <!-- Banco DUA dinámico -->
-                <div class="bg-gradient-to-br from-[#45258f] to-[#6b4ba3] rounded-2xl shadow-xl p-6 text-white">
-                    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
-                        <i class="fas fa-universal-access"></i> Recursos DUA dinámicos
-                    </h2>
-                    
-                    <div id="duaContent" class="space-y-4">
-                        <!-- Contenido dinámico según saberes -->
-                    </div>
-
-                    <button id="generarDUABtn" class="mt-6 w-full bg-white/20 hover:bg-white/30 text-white py-3 rounded-xl transition flex items-center justify-center gap-2">
-                        <i class="fas fa-sync-alt"></i> Actualizar recomendaciones
-                    </button>
-                </div>
-
-                <!-- Recursos externos -->
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6">
-                    <h3 class="font-bold text-[#014d6b] mb-4">🔗 Enlaces profesionales</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <a href="https://www.educacionyfp.gob.es/mc/sede/recursos/educacion-inclusiva.html" target="_blank" class="bg-gray-50 p-3 rounded-xl hover:shadow-md transition text-center">📘 Educación Inclusiva</a>
-                        <a href="https://www.understood.org/" target="_blank" class="bg-gray-50 p-3 rounded-xl hover:shadow-md transition text-center">🌐 Understood</a>
-                        <a href="https://www.cast.org/" target="_blank" class="bg-gray-50 p-3 rounded-xl hover:shadow-md transition text-center">🎯 CAST · UDL</a>
-                        <a href="https://www.inclusioneducativa.org/" target="_blank" class="bg-gray-50 p-3 rounded-xl hover:shadow-md transition text-center">🤝 Inclusión</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========== PESTAÑA ADMINISTRACIÓN (CORREGIDA) ========== -->
-        <div id="tabAdmin" class="tab-content hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Historial real con localStorage -->
-                <div class="bg-white rounded-2xl shadow-xl p-6">
-                    <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
-                        <i class="fas fa-history"></i> Historial de búsquedas
-                    </h2>
-                    <ul id="recentList" class="space-y-2 text-sm max-h-60 overflow-y-auto"></ul>
-                    <button id="clearRecentBtn" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition">
-                        <i class="fas fa-trash-alt mr-2"></i>Limpiar historial
-                    </button>
-                </div>
-
-                <!-- Bitácora funcional -->
-                <div class="bg-white rounded-2xl shadow-xl p-6">
-                    <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
-                        <i class="fas fa-clipboard-list"></i> Bitácora MEP
-                    </h2>
-                    <textarea id="bitacoraTexto" rows="6" class="w-full border p-4 rounded-xl text-sm resize-y" placeholder="Registro de actividades, adecuaciones, observaciones..."></textarea>
-                    <div class="flex gap-3 mt-4">
-                        <button id="guardarBitacora" class="bg-[#014d6b] text-white px-6 py-2 rounded-lg hover:bg-[#0b6284] transition flex items-center gap-2">
-                            <i class="fas fa-save"></i> Guardar
-                        </button>
-                        <button id="exportarBitacora" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition flex items-center gap-2">
-                            <i class="fas fa-file-export"></i> Exportar
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Estadísticas reales -->
-                <div class="lg:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-xl p-6">
-                    <h2 class="text-xl font-bold text-[#014d6b] mb-4">📊 Estadísticas de uso</h2>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-white p-4 rounded-xl text-center">
-                            <div class="text-3xl font-bold text-[#09b7ae]" id="statSaberes">186</div>
-                            <div class="text-xs text-gray-500">Saberes totales</div>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl text-center">
-                            <div class="text-3xl font-bold text-[#09b7ae]" id="statConsultas">0</div>
-                            <div class="text-xs text-gray-500">Consultas hoy</div>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl text-center">
-                            <div class="text-3xl font-bold text-[#09b7ae]" id="statJuegos">0</div>
-                            <div class="text-xs text-gray-500">Juegos generados</div>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl text-center">
-                            <div class="text-3xl font-bold text-[#09b7ae]" id="ultimaVisita">-</div>
-                            <div class="text-xs text-gray-500">Última visita</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- MODAL GOOGLE MODO AI (NUEVO) -->
-        <div id="googleModal" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50">
-            <div class="bg-white rounded-2xl max-w-lg w-full mx-4 p-6 shadow-2xl">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-[#014d6b] flex items-center gap-2">
-                        <i class="fab fa-google text-blue-500"></i> Google Modo AI
-                    </h3>
-                    <button id="cerrarGoogleModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                </div>
-
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
+                    <i class="fas fa-search"></i> Buscar videos educativos
+                </h2>
+                
                 <div class="bg-blue-50 p-4 rounded-xl mb-4">
-                    <p class="text-sm font-medium text-[#014d6b] mb-2">Saberes seleccionados:</p>
-                    <div id="googleSaberes" class="flex flex-wrap gap-2"></div>
+                    <p class="text-sm font-medium mb-2">Saberes seleccionados:</p>
+                    <div id="saberesParaBuscar" class="flex flex-wrap gap-2 min-h-[40px]">
+                        <span class="text-gray-400 text-sm">Ninguno</span>
+                    </div>
                 </div>
 
-                <div class="text-center mb-6">
-                    <div class="text-5xl mb-3">🔍</div>
-                    <p class="text-lg font-semibold">Integra en una sola actividad:</p>
-                    <p id="googleConsulta" class="text-xl font-bold text-[#09b7ae] mt-2"></p>
-                </div>
-
-                <div class="flex gap-3">
-                    <button id="cancelarGoogle" class="flex-1 bg-gray-200 hover:bg-gray-300 py-3 rounded-xl transition">
-                        Cancelar
+                <div class="flex gap-2 mb-6">
+                    <input type="text" id="busquedaInput" placeholder="O escribe tu búsqueda" class="flex-1 p-3 border rounded-xl">
+                    <button id="buscarVideosBtn" class="bg-[#09b7ae] hover:bg-[#014d6b] text-white px-6 py-3 rounded-xl flex items-center gap-2 transition">
+                        <i class="fas fa-search"></i> Buscar
                     </button>
-                    <a id="googleLink" href="#" target="_blank" class="flex-1 bg-[#09b7ae] hover:bg-[#014d6b] text-white py-3 rounded-xl transition flex items-center justify-center gap-2">
-                        <i class="fab fa-google"></i> Buscar en Google AI
-                    </a>
                 </div>
+
+                <div id="resultadosVideos" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Resultados -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== BITÁCORA ========== -->
+        <div id="tabAdmin" class="tab-content hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-bold text-[#014d6b] mb-4">📋 Bitácora MEP</h2>
+                <textarea id="bitacoraTexto" rows="10" class="w-full border p-4 rounded-xl text-sm" placeholder="Escribe tus observaciones..."></textarea>
+                <div class="flex gap-3 mt-4">
+                    <button id="guardarBitacora" class="bg-[#014d6b] text-white px-6 py-2 rounded-lg hover:bg-[#0b6284]">Guardar</button>
+                    <button id="limpiarBitacora" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300">Limpiar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MODAL LUPA (SOLO PARA ESTO) ========== -->
+        <div id="lupaModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-[#014d6b]">🔍 Búsqueda en Google</h3>
+                    <button id="cerrarLupaModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-xl mb-4">
+                    <p class="text-sm font-medium mb-2">Saberes seleccionados:</p>
+                    <div id="modalSaberes" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <p class="text-lg font-semibold mb-4">Integra en una sola actividad:</p>
+                <p id="consultaGoogle" class="text-xl font-bold text-[#09b7ae] mb-6 text-center"></p>
+
+                <a id="googleLink" href="#" target="_blank" class="block w-full bg-[#09b7ae] hover:bg-[#014d6b] text-white text-center py-3 rounded-xl transition">
+                    Buscar en Google
+                </a>
             </div>
         </div>
     </div>
 
     <script>
         // ========== BASE DE DATOS COMPLETA (186 SABERES) ==========
-        // ========== BASE DE DATOS COMPLETA DEL PNFT 2026 ==========
+            // ========== BASE DE DATOS COMPLETA DEL PNFT 2026 ==========
         // Incluye todos los saberes conceptuales e indicadores de logro
         // de Preescolar, I Ciclo, II Ciclo y III Ciclo
-
+        
         const saberesDB = {
             // ========== PREESCOLAR (Materno Infantil y Transición) ==========
             preescolar: {
@@ -1150,50 +1048,56 @@
 
         // Verbos Bloom
         const verbosBloom = {
-            recordar: ['identifica', 'reconoce', 'enumera'],
-            comprender: ['explica', 'ejemplifica', 'clasifica'],
-            aplicar: ['utiliza', 'resuelve', 'programa'],
-            analizar: ['compara', 'organiza', 'diferencia'],
-            evaluar: ['justifica', 'argumenta', 'valida'],
-            crear: ['diseña', 'construye', 'propone']
+            recordar: ['identifica', 'reconoce', 'enumera', 'describe'],
+            comprender: ['explica', 'ejemplifica', 'clasifica', 'resume'],
+            aplicar: ['utiliza', 'resuelve', 'programa', 'implementa'],
+            analizar: ['compara', 'organiza', 'diferencia', 'examina'],
+            evaluar: ['justifica', 'argumenta', 'valida', 'recomienda'],
+            crear: ['diseña', 'construye', 'propone', 'desarrolla']
         };
 
-        // Variables globales
+        // Estado
         let saberesSeleccionados = [];
 
-        // Elementos DOM
+        // Elementos
         const cicloSelect = document.getElementById('cicloSelect');
         const nivelSelect = document.getElementById('nivelSelect');
-        const modulo1Div = document.getElementById('modulo1Container');
-        const modulo2Div = document.getElementById('modulo2Container');
+        const modulo1 = document.getElementById('modulo1Container');
+        const modulo2 = document.getElementById('modulo2Container');
         const contadorSel = document.getElementById('contadorSel');
         const listaSel = document.getElementById('saberesSeleccionadosList');
-        const saberesYoutube = document.getElementById('saberesParaYoutube');
-        const youtubeResultados = document.getElementById('youtubeResultados');
-        const youtubeInput = document.getElementById('youtubeSearch');
-        const buscarYoutube = document.getElementById('buscarYoutubeBtn');
-        const googleModal = document.getElementById('googleModal');
-        const googleSaberes = document.getElementById('googleSaberes');
-        const googleConsulta = document.getElementById('googleConsulta');
+        const indicadoresContainer = document.getElementById('indicadoresContainer');
+        const indicadoresInner = document.getElementById('indicadoresInner');
+        const promptSalida = document.getElementById('promptSalida');
+        const generarBtn = document.getElementById('generarPromptBtn');
+        const copiarBtn = document.getElementById('copiarPrompt');
+        const saberesBuscar = document.getElementById('saberesParaBuscar');
+        const buscarInput = document.getElementById('busquedaInput');
+        const buscarBtn = document.getElementById('buscarVideosBtn');
+        const resultados = document.getElementById('resultadosVideos');
+        const lupaModal = document.getElementById('lupaModal');
+        const modalSaberes = document.getElementById('modalSaberes');
+        const consultaGoogle = document.getElementById('consultaGoogle');
         const googleLink = document.getElementById('googleLink');
-        const recentList = document.getElementById('recentList');
-        const bitacoraTexto = document.getElementById('bitacoraTexto');
-        const duaContent = document.getElementById('duaContent');
+        const cerrarLupa = document.getElementById('cerrarLupaModal');
+        const bitacora = document.getElementById('bitacoraTexto');
+        const guardarBitacora = document.getElementById('guardarBitacora');
+        const limpiarBitacora = document.getElementById('limpiarBitacora');
 
-        // ========== FUNCIONES PRINCIPALES ==========
+        // Niveles
+        const niveles = { preescolar: ['Materno Infantil', 'Transición'], I: ['Primero','Segundo','Tercero'], II: ['Cuarto','Quinto','Sexto'], III: ['Sétimo','Octavo','Noveno'] };
+
         function renderNiveles() {
-            const niveles = { preescolar: ['MI', 'Transición'], I: ['1°','2°','3°'], II: ['4°','5°','6°'], III: ['7°','8°','9°'] };
             nivelSelect.innerHTML = niveles[cicloSelect.value].map(n => `<option>${n}</option>`).join('');
             renderSaberes();
         }
 
         function renderSaberes() {
-            const ciclo = cicloSelect.value;
-            const data = saberesDB[ciclo] || saberesDB.preescolar;
-            renderModulo(modulo1Div, data.modulo1, 'mod1');
-            renderModulo(modulo2Div, data.modulo2, 'mod2');
+            const data = saberesDB[cicloSelect.value] || saberesDB.preescolar;
+            renderModulo(modulo1, data.modulo1, 'mod1');
+            renderModulo(modulo2, data.modulo2, 'mod2');
             saberesSeleccionados = [];
-            actualizarSeleccion();
+            actualizarUI();
         }
 
         function renderModulo(container, modData, modId) {
@@ -1202,7 +1106,7 @@
                 if (saberes.length) {
                     html += `<div class="mb-4"><div class="font-semibold text-xs text-gray-500 mb-2 uppercase">${area}</div>`;
                     saberes.forEach(s => {
-                        html += `<button data-mod="${modId}" data-area="${area}" data-saber="${s.saber}" data-indicador="${s.indicador}" class="saber-chip text-xs">${s.saber}</button>`;
+                        html += `<button data-mod="${modId}" data-area="${area}" data-saber="${s.saber}" data-indicador="${s.indicador}" class="saber-chip">${s.saber}</button>`;
                     });
                     html += `</div>`;
                 }
@@ -1214,7 +1118,7 @@
                     const idx = saberesSeleccionados.findIndex(s => s.saber === saber);
                     if (idx >= 0) {
                         saberesSeleccionados.splice(idx, 1);
-                        btn.classList.remove('selected', 'bg-[#09b7ae]', 'text-white');
+                        btn.classList.remove('selected');
                     } else {
                         if (saberesSeleccionados.length >= 2) return alert('Máximo 2 saberes');
                         saberesSeleccionados.push({ 
@@ -1223,212 +1127,122 @@
                             area: btn.dataset.area, 
                             modulo: btn.dataset.mod 
                         });
-                        btn.classList.add('selected', 'bg-[#09b7ae]', 'text-white');
+                        btn.classList.add('selected');
                     }
-                    actualizarSeleccion();
-                    actualizarSaberesYoutube();
+                    actualizarUI();
                 });
             });
         }
 
-        function actualizarSeleccion() {
-            contadorSel.innerText = saberesSeleccionados.length;
-            listaSel.innerHTML = saberesSeleccionados.map(s => 
-                `<span class="bg-white/20 px-3 py-1.5 rounded-full text-sm">${s.saber}</span>`
-            ).join('');
-            guardarHistorial();
-        }
-
-        function actualizarSaberesYoutube() {
-            saberesYoutube.innerHTML = saberesSeleccionados.length 
+        function actualizarUI() {
+            contadorSel.textContent = saberesSeleccionados.length;
+            listaSel.innerHTML = saberesSeleccionados.map(s => `<span class="bg-white/20 px-3 py-1.5 rounded-full text-sm">${s.saber}</span>`).join('');
+            saberesBuscar.innerHTML = saberesSeleccionados.length 
                 ? saberesSeleccionados.map(s => `<span class="bg-blue-100 text-[#014d6b] px-3 py-1 rounded-full text-xs">${s.saber}</span>`).join('')
                 : '<span class="text-gray-400 text-sm">Ningún saber seleccionado</span>';
+            mostrarIndicadores();
         }
 
-        // ========== GOOGLE MODO AI (NUEVO) ==========
-        document.getElementById('abrirModalBtn').addEventListener('click', () => {
+        function mostrarIndicadores() {
             if (!saberesSeleccionados.length) {
-                alert('Selecciona al menos un saber');
+                indicadoresContainer.classList.add('hidden');
                 return;
             }
 
-            googleSaberes.innerHTML = saberesSeleccionados.map(s => 
-                `<span class="bg-[#09b7ae] text-white px-3 py-1 rounded-full text-sm">${s.saber}</span>`
-            ).join('');
-
-            const consulta = `Integra en una sola actividad: ${saberesSeleccionados.map(s => s.saber).join(' y ')}`;
-            googleConsulta.textContent = consulta;
-            
-            const busqueda = `actividad educativa integrada ${saberesSeleccionados.map(s => s.saber).join(' ')} para docentes`;
-            googleLink.href = `https://www.google.com/search?q=${encodeURIComponent(busqueda)}&udm=2`;
-            
-            googleModal.classList.remove('hidden');
-            googleModal.classList.add('flex');
-        });
-
-        document.getElementById('cerrarGoogleModal').addEventListener('click', () => {
-            googleModal.classList.add('hidden');
-            googleModal.classList.remove('flex');
-        });
-
-        document.getElementById('cancelarGoogle').addEventListener('click', () => {
-            googleModal.classList.add('hidden');
-            googleModal.classList.remove('flex');
-        });
-
-        googleModal.addEventListener('click', (e) => {
-            if (e.target === googleModal) {
-                googleModal.classList.add('hidden');
-                googleModal.classList.remove('flex');
-            }
-        });
-
-        // ========== YOUTUBE DINÁMICO ==========
-        function buscarEnYouTube() {
-            let query = youtubeInput.value.trim();
-            if (!query && saberesSeleccionados.length) {
-                query = saberesSeleccionados.map(s => s.saber).join(' ');
-            }
-            if (!query) {
-                alert('Escribe un término o selecciona saberes');
-                return;
-            }
-
-            youtubeResultados.innerHTML = '<p class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Buscando...</p>';
-
-            // Simulación de resultados (modo demo)
-            setTimeout(() => {
-                const resultados = [
-                    { titulo: `Video educativo sobre ${saberesSeleccionados[0]?.saber || query}`, canal: 'EducaTIC', id: 'dU1xS07N-FA', duracion: '3:45' },
-                    { titulo: `Aprende ${saberesSeleccionados[0]?.saber || query} jugando`, canal: 'Aprendizaje divertido', id: 'cDA3_5982h8', duracion: '4:02' },
-                    { titulo: `${saberesSeleccionados[0]?.saber || query} para niños`, canal: 'Kids Education', id: 'x7X9w_Gj1zI', duracion: '3:30' }
-                ];
-
-                youtubeResultados.innerHTML = resultados.map(v => `
-                    <div class="video-result cursor-pointer" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
-                        <div class="flex gap-3">
-                            <div class="w-20 h-16 bg-gray-200 rounded flex items-center justify-center"><i class="fab fa-youtube text-red-600 text-2xl"></i></div>
-                            <div>
-                                <p class="font-medium">${v.titulo}</p>
-                                <p class="text-xs text-gray-500">${v.canal} · ${v.duracion}</p>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-            }, 1000);
+            let html = '';
+            saberesSeleccionados.forEach((item, idx) => {
+                html += `<div class="border-b pb-6 mb-6 last:border-0">`;
+                html += `<p class="font-bold text-[#014d6b] mb-2">${item.saber}</p>`;
+                html += `<div class="bg-blue-50 p-4 rounded-xl mb-4"><p class="text-sm">${item.indicador}</p></div>`;
+                html += `<div class="mb-2"><select id="verbo${idx}" class="text-sm border rounded-lg p-2">`;
+                html += `<option value="">Seleccionar verbo...</option>`;
+                for (let verbos of Object.values(verbosBloom)) {
+                    verbos.forEach(v => html += `<option value="${v}">${v}</option>`);
+                }
+                html += `</select></div>`;
+                html += `<textarea id="eval${idx}" rows="2" class="w-full p-3 border border-green-200 rounded-xl text-sm" placeholder="Indicador de evaluación...">${item.indicador.replace('Identifica', 'El estudiante identifica').replace('Reconoce', 'Reconoce')}</textarea>`;
+                html += `</div>`;
+            });
+            indicadoresInner.innerHTML = html;
+            indicadoresContainer.classList.remove('hidden');
         }
 
-        buscarYoutube.addEventListener('click', buscarEnYouTube);
-
-        // ========== DUA DINÁMICO ==========
-        function actualizarDUA() {
+        // Prompt
+        generarBtn.addEventListener('click', () => {
             if (!saberesSeleccionados.length) {
-                duaContent.innerHTML = `
-                    <div class="bg-white/10 p-4 rounded-xl">
-                        <p class="text-center">Selecciona saberes para ver recomendaciones DUA personalizadas</p>
-                    </div>
-                `;
+                promptSalida.value = 'Selecciona al menos un saber';
                 return;
             }
+            const evalTexts = [];
+            saberesSeleccionados.forEach((_, i) => {
+                const el = document.getElementById(`eval${i}`);
+                if (el) evalTexts.push(el.value);
+            });
+            promptSalida.value = `Diseña una mediación pedagógica para ${cicloSelect.value} sobre ${saberesSeleccionados.map(s => s.saber).join(' y ')}.
 
-            const saberes = saberesSeleccionados.map(s => s.saber);
-            duaContent.innerHTML = `
-                <div class="bg-white/10 p-4 rounded-xl">
-                    <p class="font-bold mb-2">📌 Para ${saberes.join(' y ')}:</p>
-                    <ul class="space-y-2 text-sm">
-                        <li>👁️ <span class="font-medium">Visual:</span> Usar imágenes, diagramas y videos con descripciones</li>
-                        <li>🦾 <span class="font-medium">Motriz:</span> Actividades con materiales manipulables de gran tamaño</li>
-                        <li>🧠 <span class="font-medium">Cognitiva:</span> Secuencias cortas, repetición y apoyos visuales</li>
-                        <li>🦻 <span class="font-medium">Auditiva:</span> Instrucciones escritas y subtítulos</li>
-                    </ul>
-                </div>
-                <div class="bg-white/10 p-4 rounded-xl">
-                    <p class="font-bold mb-2">🎯 Actividad DUA sugerida:</p>
-                    <p class="text-sm">"Juego de roles con tarjetas pictográficas donde los estudiantes representen los conceptos de ${saberes.join(' y ')}"</p>
-                </div>
-            `;
-        }
+Indicadores de evaluación:
+${evalTexts.map((t,i) => `${i+1}. ${t}`).join('\n')}
 
-        document.getElementById('generarDUABtn').addEventListener('click', actualizarDUA);
-
-        // ========== HISTORIAL (localStorage) ==========
-        function guardarHistorial() {
-            if (!saberesSeleccionados.length) return;
-            const nombres = saberesSeleccionados.map(s => s.saber).join(' + ');
-            const item = `${nombres} (${new Date().toLocaleTimeString()})`;
-            let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-            recent.unshift(item);
-            if (recent.length > 10) recent.pop();
-            localStorage.setItem('recentSearches', JSON.stringify(recent));
-            mostrarRecientes();
-            actualizarEstadisticas();
-        }
-
-        function mostrarRecientes() {
-            const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-            recentList.innerHTML = recent.length 
-                ? recent.map(r => `<li class="bg-gray-50 p-2 rounded-lg">${r}</li>`).join('')
-                : '<li class="text-gray-400">No hay búsquedas recientes</li>';
-        }
-
-        document.getElementById('clearRecentBtn').addEventListener('click', () => {
-            localStorage.removeItem('recentSearches');
-            mostrarRecientes();
-        });
-
-        // ========== BITÁCORA ==========
-        document.getElementById('guardarBitacora').addEventListener('click', () => {
-            localStorage.setItem('bitacora', bitacoraTexto.value);
-            alert('✅ Bitácora guardada');
-        });
-
-        document.getElementById('exportarBitacora').addEventListener('click', () => {
-            const texto = bitacoraTexto.value;
-            const blob = new Blob([texto], { type: 'text/plain' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `bitacora_${new Date().toISOString().split('T')[0]}.txt`;
-            a.click();
-        });
-
-        // Cargar bitácora guardada
-        const savedBitacora = localStorage.getItem('bitacora');
-        if (savedBitacora) bitacoraTexto.value = savedBitacora;
-
-        // ========== ESTADÍSTICAS ==========
-        function actualizarEstadisticas() {
-            const consultas = JSON.parse(localStorage.getItem('recentSearches') || '[]').length;
-            document.getElementById('statConsultas').textContent = consultas;
-            document.getElementById('ultimaVisita').textContent = localStorage.getItem('ultimaVisita') || 'Hoy';
-        }
-
-        localStorage.setItem('ultimaVisita', new Date().toLocaleDateString());
-        actualizarEstadisticas();
-
-        // ========== GENERAR PROMPT ==========
-        document.getElementById('generarPromptBtn').addEventListener('click', () => {
-            if (!saberesSeleccionados.length) {
-                document.getElementById('promptSalida').value = 'Selecciona al menos un saber';
-                return;
-            }
-            const prompt = `Diseña una mediación pedagógica para ${cicloSelect.value} sobre ${saberesSeleccionados.map(s => s.saber).join(' y ')}.
 Incluye:
 1. Actividad desconectada
 2. Actividad con dispositivos
 3. Metodología activa
-4. Evaluación (60/10/20)
+4. Evaluación 60/10/20
 5. Variante DUA`;
-            document.getElementById('promptSalida').value = prompt;
         });
 
-        document.getElementById('copiarPrompt').addEventListener('click', () => {
-            const prompt = document.getElementById('promptSalida');
-            prompt.select();
+        copiarBtn.addEventListener('click', () => {
+            promptSalida.select();
             document.execCommand('copy');
-            alert('✅ Prompt copiado');
+            alert('Copiado');
         });
 
-        // ========== TABS ==========
+        // MODAL LUPA (SOLAMENTE AQUÍ)
+        buscarBtn.addEventListener('click', () => {
+            if (!saberesSeleccionados.length && !buscarInput.value.trim()) {
+                alert('Selecciona saberes o escribe una búsqueda');
+                return;
+            }
+
+            const saberes = saberesSeleccionados.map(s => s.saber);
+            modalSaberes.innerHTML = saberes.length 
+                ? saberes.map(s => `<span class="bg-[#09b7ae] text-white px-3 py-1 rounded-full text-sm">${s}</span>`).join('')
+                : '<span class="text-gray-500">Búsqueda manual</span>';
+
+            const textoBusqueda = saberes.length 
+                ? `Integra en una sola actividad: ${saberes.join(' y ')}`
+                : buscarInput.value.trim();
+
+            consultaGoogle.textContent = textoBusqueda;
+            googleLink.href = `https://www.google.com/search?q=${encodeURIComponent(textoBusqueda)}&udm=2`;
+            
+            lupaModal.style.display = 'flex';
+        });
+
+        cerrarLupa.addEventListener('click', () => {
+            lupaModal.style.display = 'none';
+        });
+
+        lupaModal.addEventListener('click', (e) => {
+            if (e.target === lupaModal) lupaModal.style.display = 'none';
+        });
+
+        // Bitácora
+        guardarBitacora.addEventListener('click', () => {
+            localStorage.setItem('bitacora', bitacora.value);
+            alert('Guardado');
+        });
+
+        limpiarBitacora.addEventListener('click', () => {
+            bitacora.value = '';
+            localStorage.removeItem('bitacora');
+        });
+
+        const saved = localStorage.getItem('bitacora');
+        if (saved) bitacora.value = saved;
+
+        // Tabs
+        const tabs = ['Plan', 'Recursos', 'Admin'];
         function mostrarTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab${tab}`).classList.remove('hidden');
@@ -1440,11 +1254,9 @@ Incluye:
         document.getElementById('tabRecursosBtn').addEventListener('click', () => mostrarTab('Recursos'));
         document.getElementById('tabAdminBtn').addEventListener('click', () => mostrarTab('Admin'));
 
-        // Inicializar
+        // Inicio
         renderNiveles();
         cicloSelect.addEventListener('change', renderNiveles);
-        mostrarRecientes();
-        actualizarSaberesYoutube();
     </script>
 </body>
 </html>
