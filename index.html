@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Docente PNFT 2026 · Planificador de Mediaciones</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 6 (íconos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- html2pdf (para exportar) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7fb; }
+        .tab-active { background-color: white; border-bottom: 3px solid #2563eb; font-weight: 600; }
+        .pnft-card { transition: all 0.2s; }
+        .pnft-card:hover { box-shadow: 0 10px 25px -5px rgba(37,99,235,0.15); }
+        .saber-chip { user-select: none; cursor: pointer; transition: all 0.1s; }
+        .saber-chip.selected { background-color: #3b82f6; color: white; border-color: #2563eb; }
+        .area-badge { background: linear-gradient(145deg, #e9eff9, white); }
+        .modulo-col { min-width: 280px; }
+    </style>
+</head>
+<body class="p-6 md:p-8 text-gray-800">
+
+    <!-- Encabezado principal -->
+    <div class="max-w-7xl mx-auto">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
+                <i class="fas fa-robot text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Asistente Docente <span class="text-blue-600">PNFT 2026</span></h1>
+                <p class="text-sm text-gray-500 mt-0.5">Macrocurrículo · Formación Tecnológica · Preescolar, I, II y III Ciclo</p>
+            </div>
+        </div>
+
+        <!-- TABS PRINCIPALES -->
+        <div class="border-b border-gray-200 flex flex-wrap gap-1 text-sm font-medium mb-6">
+            <button id="tabPlanBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-white text-blue-700 border-b-3 border-blue-600 shadow-sm flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Planificador</button>
+            <button id="tabRecursosBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600 hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-hand-holding-heart"></i> Recursos y Apoyos</button>
+            <button id="tabAdminBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600 hover:bg-gray-50 flex items-center gap-2"><i class="fas fa-chart-simple"></i> Administración</button>
+        </div>
+
+        <!-- ==================== PESTAÑA 1: PLANIFICADOR ==================== -->
+        <div id="tabPlan" class="tab-content block">
+            <!-- Selectores de ciclo y nivel -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1"><i class="fas fa-layer-group mr-1 text-blue-500"></i>Ciclo</label>
+                    <select id="cicloSelect" class="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-300">
+                        <option value="preescolar">Ciclo Materno Infantil (Gpo Interactivo II) y Transición</option>
+                        <option value="I">I Ciclo (I, II, III grado)</option>
+                        <option value="II">II Ciclo (IV, V, VI grado)</option>
+                        <option value="III">III Ciclo (VII, VIII, IX)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1"><i class="fas fa-graduation-cap mr-1 text-green-500"></i>Nivel</label>
+                    <select id="nivelSelect" class="w-full p-3 border border-gray-300 rounded-xl shadow-sm"></select>
+                </div>
+                <div class="flex items-end">
+                    <p class="text-xs text-gray-400 italic flex items-center"><i class="fas fa-info-circle mr-1"></i>RdA y Perfil del ciclo como horizonte</p>
+                </div>
+            </div>
+
+            <!-- ÁREAS DE CONOCIMIENTO (Título) -->
+            <div class="grid grid-cols-4 gap-2 mb-3 text-center font-semibold text-gray-600 text-sm">
+                <div class="bg-blue-50 p-2 rounded-t-xl">Apropiación Tecnológica</div>
+                <div class="bg-indigo-50 p-2 rounded-t-xl">Programación y Algoritmos</div>
+                <div class="bg-purple-50 p-2 rounded-t-xl">Computación física / Robótica</div>
+                <div class="bg-pink-50 p-2 rounded-t-xl">Ciencia de datos e IA</div>
+            </div>
+
+            <!-- GALERÍA DE SABERES: Módulo 1 y Módulo 2 en columnas -->
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- MÓDULO 1 (columna izquierda) -->
+                <div class="flex-1 modulo-col bg-white rounded-2xl shadow-md border border-gray-200 p-5">
+                    <h3 class="text-lg font-bold text-blue-800 mb-2 flex items-center"><span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full mr-3">Módulo 1</span> Saberes básico / óptimo</h3>
+                    <div id="modulo1Container" class="space-y-6 max-h-[600px] overflow-y-auto pr-2"></div>
+                </div>
+                <!-- MÓDULO 2 (columna derecha) -->
+                <div class="flex-1 modulo-col bg-white rounded-2xl shadow-md border border-gray-200 p-5">
+                    <h3 class="text-lg font-bold text-purple-800 mb-2 flex items-center"><span class="bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full mr-3">Módulo 2</span> Saberes básico / óptimo</h3>
+                    <div id="modulo2Container" class="space-y-6 max-h-[600px] overflow-y-auto pr-2"></div>
+                </div>
+            </div>
+
+            <!-- Saberes seleccionados y botones -->
+            <div class="mt-8 bg-blue-50/70 border border-blue-200 rounded-2xl p-5">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="bg-white px-4 py-2 rounded-full shadow-sm text-sm font-medium"><i class="fas fa-check-circle text-green-500 mr-1"></i>Seleccionados: <span id="contadorSel">0</span>/2</div>
+                    <div id="saberesSeleccionadosList" class="flex flex-wrap gap-2 flex-1 text-sm"></div>
+                    <button id="generarPromptBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 shadow-md transition"><i class="fas fa-wand-magic-sparkles"></i> Generar prompt para IA</button>
+                    <button id="exportarPDFBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-3 rounded-xl text-sm flex items-center gap-2 shadow transition"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+                <!-- Caja de prompt generado (para copiar) -->
+                <div class="mt-4 bg-gray-900 text-gray-100 p-4 rounded-xl text-sm font-mono border border-gray-700 relative">
+                    <i class="fas fa-terminal absolute top-2 right-2 text-gray-500"></i>
+                    <pre id="promptSalida" class="whitespace-pre-wrap">Selecciona hasta dos saberes y haz clic en generar.</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PESTAÑA 2: RECURSOS Y APOYOS ==================== -->
+        <div id="tabRecursos" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- NEE / Apoyos Educativos -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-yellow-200">
+                    <h2 class="text-xl font-bold text-yellow-700 flex items-center gap-2 mb-4"><i class="fas fa-puzzle-piece"></i> Necesidades Educativas Especiales / Apoyos</h2>
+                    <p class="text-sm text-gray-600 mb-3">Orientaciones DUA y adecuaciones curriculares (basado en PNFT).</p>
+                    <ul class="space-y-2 text-sm list-disc pl-5 text-gray-700">
+                        <li><span class="font-medium">Visual:</span> Aumentar tamaño de interfaz, lectores de pantalla, materiales táctiles (tarjetas de algoritmos físicos).</li>
+                        <li><span class="font-medium">Motriz:</span> Teclados adaptados, pulsadores, uso de voz para programación, actividades desconectadas con bloques de gran tamaño.</li>
+                        <li><span class="font-medium">Cognitivo:</span> Secuencias cortas, refuerzo con canciones, patrones, aprendizaje cooperativo, más tiempo en exploración.</li>
+                        <li><span class="font-medium">Auditivo:</span> Subtítulos en videos, apoyos visuales, lenguaje de señas en conceptos clave (evento, dato, robot).</li>
+                        <li><span class="font-medium">Aulas integradas:</span> Coordinar con docente de apoyo, priorizar saberes procedimentales y actitudinales.</li>
+                    </ul>
+                </div>
+                <!-- Videos YouTube educativos -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-red-100">
+                    <h2 class="text-xl font-bold text-red-600 flex items-center gap-2 mb-4"><i class="fab fa-youtube"></i> Videoteca sugerida</h2>
+                    <div class="space-y-4">
+                        <iframe class="w-full h-44 rounded-xl" src="https://www.youtube.com/embed/_HW-cFJgRiw" title="¿Qué es el pensamiento computacional?" frameborder="0" allowfullscreen></iframe>
+                        <p class="text-xs text-gray-500">Cuidado del Hardware · Algoritmos cotidianos · Robot y sensores.</p>
+                        <div class="flex gap-2 flex-wrap">
+                            <a href="#" class="text-blue-600 text-sm hover:underline"><i class="fab fa-youtube mr-1"></i>Lista "Programación por bloques"</a>
+                            <a href="#" class="text-blue-600 text-sm hover:underline"><i class="fab fa-youtube mr-1"></i>IA para niños</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PESTAÑA 3: ADMINISTRACIÓN ==================== -->
+        <div id="tabAdmin" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Búsquedas recientes (localStorage) -->
+                <div class="bg-white p-6 rounded-2xl shadow-md">
+                    <h2 class="text-xl font-bold text-gray-700 flex items-center gap-2 mb-4"><i class="fas fa-clock-rotate-left"></i> Búsquedas recientes</h2>
+                    <ul id="recentList" class="list-disc pl-5 space-y-1 text-sm text-gray-600">
+                        <li>Hardware + Algoritmo (I Ciclo)</li>
+                        <li>Evento + Robot (Preescolar)</li>
+                    </ul>
+                    <button id="clearRecentBtn" class="mt-4 text-xs bg-gray-200 px-3 py-1 rounded-full hover:bg-gray-300">Limpiar historial</button>
+                </div>
+                <!-- Reportes / Bitácora formato MEP -->
+                <div class="bg-white p-6 rounded-2xl shadow-md border-l-4 border-green-500">
+                    <h2 class="text-xl font-bold text-green-700 flex items-center gap-2 mb-4"><i class="fas fa-clipboard-list"></i> Reporte de Bitácora (formato MEP)</h2>
+                    <textarea id="bitacoraTexto" rows="6" class="w-full border p-3 rounded-xl text-sm" placeholder="Escribe tus notas de seguimiento...">Según el RdA del ciclo, los estudiantes han trabajado saberes de programación y robótica. Se observa avance en... (queda para llenado manual)</textarea>
+                    <div class="flex gap-2 mt-3">
+                        <button id="copiarBitacora" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-2"><i class="fas fa-copy"></i> Copiar informe</button>
+                        <span class="text-xs text-gray-400 self-center">Formato sugerido para supervisión</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-xs text-gray-400 mt-10 border-t pt-5">© PNFT-DRTE 2026 · Asistente para planeamiento didáctico por competencias</div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- BASE DE DATOS DE SABERES CONCEPTUALES (extraídos de las guías) ----------
+            const saberesDB = {
+    // ========== PREESCOLAR (Materno Infantil y Transición) ==========
+    preescolar: {
+        modulo1: { // Básico requerido + Óptimo (integrados)
+            apropiacion: [
+                "Computadora",
+                "Software",
+                "Herramientas de creación de contenido multimedia",
+                "Hardware (óptimo)",
+                "Internet (óptimo)"
+            ],
+            programacion: [
+                "Entornos de programación iconográfico",
+                "Lateralidad y orientación espacial",
+                "Evento"
+            ],
+            computacion: [], // N/A en módulo 1 preescolar
+            ciencia: []      // N/A en módulo 1 preescolar
+        },
+        modulo2: {
+            apropiacion: [
+                "Conexión entre dispositivos (bluetooth)",
+                "Conexión entre dispositivos (wifi - óptimo)"
+            ],
+            programacion: [
+                "Estado",
+                "Algoritmo",
+                "Dato (programación)",
+                "Estructuras repetitivas (ciclo finito/infinito)"
+            ],
+            computacion: [
+                "Robot",
+                "Componentes del robot (cuerpo, sistema sensorial, control)",
+                "Clasificación de robots por su uso"
+            ],
+            ciencia: [
+                "Dato (ciencias de datos - texto, imagen, sonido, video)",
+                "Estrategias para presentar datos (gráficos pictóricos)",
+                "Visualización de datos (óptimo)",
+                "Realidad aumentada (óptimo)"
+            ]
+        }
+    },
+    
+    // ========== I CICLO (Primero, Segundo, Tercero) ==========
+    I: {
+        modulo1: { // Basado en primero, segundo y tercer grado
+            apropiacion: [
+                "Computadora",
+                "Hardware (entrada, procesamiento, almacenamiento, salida)",
+                "Software",
+                "Herramientas de productividad (procesador de texto)",
+                "Herramientas de creación multimedia (audio, imagen)",
+                "Conexión entre dispositivos (bluetooth)",
+                "Internet",
+                "Redes de comunicación",
+                "Gestión de archivos",
+                "Herramienta de productividad (editor de presentaciones)"
+            ],
+            programacion: [
+                "Entornos de programación iconográfico",
+                "Entorno de programación por bloques",
+                "Reconocimiento de patrones",
+                "Estado",
+                "Algoritmo",
+                "Evento",
+                "Dato",
+                "Variable",
+                "Estructuras repetitivas",
+                "Operadores aritméticos",
+                "Operador relacional"
+            ],
+            computacion: [], // N/A en I ciclo
+            ciencia: []      // N/A en módulo 1
+        },
+        modulo2: {
+            apropiacion: [
+                "Herramientas de creación multimedia (audio, imagen)",
+                "Conexión entre dispositivos (bluetooth)",
+                "Internet",
+                "Navegador",
+                "Buscador",
+                "Netiqueta",
+                "Comunicación y colaboración sincrónica/asincrónica",
+                "Huella digital",
+                "Software malicioso",
+                "Riesgo en línea",
+                "Medidas de seguridad web"
+            ],
+            programacion: [
+                "Estructuras repetitivas",
+                "Estructuras condicionales (simples)",
+                "Operadores aritméticos",
+                "Operador relacional ('igual que')"
+            ],
+            computacion: [], // N/A
+            ciencia: [
+                "Fundamentos de la IA",
+                "Asistentes virtuales",
+                "Desafíos de la IA"
+            ]
+        }
+    },
+    
+    // ========== II CICLO (Cuarto, Quinto, Sexto) ==========
+    II: {
+        modulo1: {
+            apropiacion: [
+                "Hardware (dispositivos computacionales y periféricos)",
+                "Software (sistema, aplicación, utilitarios)",
+                "Redes de comunicación (red local)",
+                "Conexión entre dispositivos (física/inalámbrica)",
+                "Gestión de archivos (crear, mover, copiar, renombrar, eliminar)",
+                "Herramienta de productividad (procesador de texto, editor presentaciones)",
+                "Sistema operativo",
+                "Herramientas de creación multimedia (audio, video, editor gráfico)"
+            ],
+            programacion: [
+                "Entorno de programación por bloques",
+                "Estado",
+                "Algoritmo (pseudocódigo)",
+                "Dato (numérico, texto)",
+                "Variable",
+                "Estructuras repetitivas",
+                "Eventos",
+                "Estructuras condicionales (simples y compuestas)",
+                "Operadores aritméticos",
+                "Operadores relacionales"
+            ],
+            computacion: [
+                "Computación física",
+                "Circuito eléctrico",
+                "Fundamentos de electrónica (pines entrada/salida, señal analógica/digital)",
+                "Microcontrolador"
+            ],
+            ciencia: [
+                "Herramientas generativas",
+                "Desafíos de la IA",
+                "Fundamentos de la IA"
+            ]
+        },
+        modulo2: {
+            apropiacion: [
+                "Herramientas de creación multimedia (editor gráfico)",
+                "Navegador",
+                "Buscador",
+                "Internet",
+                "Netiqueta",
+                "Comunicación y colaboración sincrónica/asincrónica (chat)",
+                "Huella digital",
+                "Contraseñas seguras",
+                "Hackeo (phishing, redes inseguras)",
+                "Software malicioso (virus)",
+                "Antivirus",
+                "Almacenamiento en la nube",
+                "Referencias bibliográficas",
+                "Internet de las cosas",
+                "Moneda virtual",
+                "Riesgos en línea (ciberacoso, suplantación)",
+                "Medidas de seguridad en la web (HTTPS, términos y condiciones)"
+            ],
+            programacion: [
+                "Colección de datos (listas, arreglos)",
+                "Operadores lógicos (Y, O, NO)",
+                "Procedimientos/funciones",
+                "Dato (booleano)"
+            ],
+            computacion: [
+                "Sensor (integrado/externo, VCC, GND)",
+                "Actuador (integrado/externo)",
+                "Domótica"
+            ],
+            ciencia: [
+                "Dato (numérico, texto, ubicación, imágenes)",
+                "Recolección de datos (técnicas)",
+                "Almacenamiento de datos",
+                "Visualización de datos (gráficos, tablas)",
+                "Estrategias para presentar datos (tablas)",
+                "Fundamentos de la IA",
+                "Herramientas generativas"
+            ]
+        }
+    },
+    
+    // ========== III CICLO (Sétimo, Octavo, Noveno) ==========
+    III: {
+        modulo1: {
+            apropiacion: [
+                "Computadora (reglas básicas de uso)",
+                "Hardware (componentes, periféricos, tipos de computadoras)",
+                "Software (tipos, funciones)",
+                "Redes de comunicación (módem, router, puntos de acceso)",
+                "Sistema operativo (categorías, papelera)",
+                "Gestión de archivos (propiedades: tamaño, tipo, extensión)",
+                "Herramientas de creación multimedia (editor de gráficos)",
+                "Conexión entre dispositivos (IP)"
+            ],
+            programacion: [
+                "Entorno de programación textual o por bloques",
+                "Lógica de programación (proposiciones, conectores lógicos, tablas de verdad)",
+                "Algoritmo (estructura entrada-proceso-salida, características)",
+                "Dato (tipos, almacenamiento)",
+                "Variable (declaración, asignación)",
+                "Estructuras condicionales",
+                "Estructuras repetitivas",
+                "Operadores relacionales",
+                "Operadores aritméticos",
+                "Operadores lógicos",
+                "Evento",
+                "Procedimientos/funciones"
+            ],
+            computacion: [
+                "Robot (tipos, componentes: cuerpo, sistema sensorial, control)",
+                "Robótica (diferencia con computación física)",
+                "Mecánica aplicada a la robótica (estructura, estabilidad)",
+                "Mecanismos (transmisión y transformación de movimiento)",
+                "Circuito eléctrico (componentes, carga, voltaje, corriente, resistencias)",
+                "Fundamentos de electrónica (pines, señal analógica/digital)",
+                "Microcontrolador (pines digitales/analógicos, comunicación programa-tarjeta)"
+            ],
+            ciencia: [
+                "Fundamentos de la IA",
+                "Asistentes virtuales",
+                "Dato (tipos en redes sociales, historiales, localización)"
+            ]
+        },
+        modulo2: {
+            apropiacion: [
+                "Herramienta de productividad (procesador de texto, editor presentaciones)",
+                "Internet (funcionamiento, ISP, conectividad)",
+                "Navegador (pestañas, seguridad)",
+                "Buscador (estrategias búsqueda, filtros, dominios confiables)",
+                "Netiqueta",
+                "Comunicación y colaboración sincrónica/asincrónica (correo, chat, videollamada)",
+                "Almacenamiento en la nube (guardar, organizar, compartir)",
+                "Referencias bibliográficas (autor, título, fuente, fecha)",
+                "Criptomonedas (utilidad, implicaciones)",
+                "Contraseñas seguras (generadores, doble factor)",
+                "Software malicioso (características, riesgos)",
+                "Riesgos en línea (suplantación, grooming, phishing, noticias falsas)",
+                "Plataformas de creación de contenido",
+                "Licencia digital",
+                "Hackeo (tipos de hacker, implicaciones legales)",
+                "Antivirus",
+                "Redes de comunicación (arquitectura, protocolos HTTP/HTTPS/TCP/IP)",
+                "Sistema operativo (optimización: memoria, desfragmentar, caché)",
+                "Herramienta de productividad (gestor de bases de datos)",
+                "Herramientas de creación multimedia (modelado 3D)",
+                "Plataformas de creación de contenido (encuestas, formularios)",
+                "Derechos de autor y licenciamiento",
+                "Huella digital",
+                "Riesgos en línea (acceso inapropiado, ciberadicción, ciberacoso, sexting)"
+            ],
+            programacion: [
+                "Colección de datos (listas, arreglos)",
+                "Operadores lógicos (Y, O, NO)",
+                "Procedimientos/funciones (declaración, invocación, parámetros, argumentos)"
+            ],
+            computacion: [
+                "Sensor (integrado/externo, conexión VCC/GND)",
+                "Actuador (integrado/externo)",
+                "Domótica (usos, aplicaciones, beneficios)",
+                "Movimiento en mecanismos (entrada/salida)",
+                "Microcontrolador (pines, VCC/GND, comunicación sensores/actuadores)",
+                "Prototipos (diseño e integración de sensores, actuadores)"
+            ],
+            ciencia: [
+                "Dato (organización, conservación, seguridad, responsabilidad)",
+                "Recolección de datos (registros escolares/personales)",
+                "Almacenamiento de datos (ciclo de vida: creación, uso, conservación, eliminación)",
+                "Visualización de datos",
+                "Estrategias para presentar datos",
+                "Fundamentos de la IA (funcionamiento, diferencia con otros sistemas)",
+                "Herramientas generativas (texto, imagen, audio, seguridad, responsabilidad)",
+                "Desafíos de la IA (sesgos, manipulación, dependencia, privacidad)"
+            ]
+        }
+    }
+};
+
+            // ---------- VARIABLES GLOBALES ----------
+            let saberesSeleccionados = []; // máximo 2 objetos { area, saber, modulo }
+            const cicloSelect = document.getElementById('cicloSelect');
+            const nivelSelect = document.getElementById('nivelSelect');
+            const modulo1Div = document.getElementById('modulo1Container');
+            const modulo2Div = document.getElementById('modulo2Container');
+            const contadorSel = document.getElementById('contadorSel');
+            const listaSel = document.getElementById('saberesSeleccionadosList');
+            const promptSalida = document.getElementById('promptSalida');
+            const generarBtn = document.getElementById('generarPromptBtn');
+            const exportarBtn = document.getElementById('exportarPDFBtn');
+            const recentList = document.getElementById('recentList');
+
+            // Opciones de niveles por ciclo
+            const nivelesPorCiclo = {
+                preescolar: ['Materno Infantil (Grupo II)', 'Transición'],
+                I: ['Primero', 'Segundo', 'Tercero'],
+                II: ['Cuarto', 'Quinto', 'Sexto'],
+                III: ['Sétimo', 'Octavo', 'Noveno']
+            };
+
+            // Renderizar niveles según ciclo
+            function renderNiveles() {
+                const ciclo = cicloSelect.value;
+                const niveles = nivelesPorCiclo[ciclo] || [];
+                nivelSelect.innerHTML = niveles.map(n => `<option value="${n}">${n}</option>`).join('');
+                renderSaberes(); // al cambiar ciclo se actualizan saberes
+            }
+            cicloSelect.addEventListener('change', renderNiveles);
+
+            // Renderiza las tarjetas de saberes de módulo 1 y 2 (por ciclo)
+            function renderSaberes() {
+                const ciclo = cicloSelect.value;
+                const data = saberesDB[ciclo] || saberesDB['I']; // fallback I
+                // Módulo 1
+                renderModulo(modulo1Div, data.modulo1, 'modulo1');
+                // Módulo 2
+                renderModulo(modulo2Div, data.modulo2, 'modulo2');
+                // reset selección
+                saberesSeleccionados = [];
+                actualizarSeleccionUI();
+            }
+
+            function renderModulo(container, modData, moduloId) {
+                const areas = [
+                    { key: 'apropiacion', titulo: 'Apropiación', color: 'blue' },
+                    { key: 'programacion', titulo: 'Programación', color: 'indigo' },
+                    { key: 'computacion', titulo: 'Computación física', color: 'purple' },
+                    { key: 'ciencia', titulo: 'Ciencia de datos / IA', color: 'pink' }
+                ];
+                let html = '';
+                areas.forEach(area => {
+                    const saberes = modData[area.key] || [];
+                    if (saberes.length > 0 || area.key === 'computacion' && saberes.length===0) { // mostramos igual aunque esté vacío
+                        html += `<div class="mb-5">`;
+                        html += `<div class="flex items-center gap-1 mb-2"><span class="w-2 h-2 bg-${area.color}-500 rounded-full"></span><span class="font-semibold text-sm uppercase tracking-wider text-gray-500">${area.titulo}</span></div>`;
+                        html += `<div class="flex flex-wrap gap-2">`;
+                        saberes.forEach(saber => {
+                            const id = `${moduloId}_${area.key}_${saber.replace(/\s/g,'')}`;
+                            html += `<button data-modulo="${moduloId}" data-area="${area.key}" data-saber="${saber}" class="saber-chip text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 px-3 py-1.5 rounded-full transition">${saber}</button>`;
+                        });
+                        if (saberes.length === 0) html += `<span class="text-xs text-gray-400 italic">Sin saberes específicos</span>`;
+                        html += `</div></div>`;
+                    }
+                });
+                container.innerHTML = html;
+                // Asignar event listeners a los botones .saber-chip
+                container.querySelectorAll('.saber-chip').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const modulo = btn.dataset.modulo;
+                        const area = btn.dataset.area;
+                        const saber = btn.dataset.saber;
+                        manejarSeleccion(modulo, area, saber, btn);
+                    });
+                });
+            }
+
+            function manejarSeleccion(modulo, area, saber, btn) {
+                const index = saberesSeleccionados.findIndex(s => s.saber === saber && s.modulo === modulo);
+                if (index !== -1) {
+                    // ya existe -> quitar
+                    saberesSeleccionados.splice(index, 1);
+                    btn.classList.remove('selected', 'bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.add('bg-gray-100', 'border-gray-300');
+                } else {
+                    // nuevo
+                    if (saberesSeleccionados.length >= 2) {
+                        alert('Solo puedes seleccionar hasta 2 saberes para articular. Desmarca uno primero.');
+                        return;
+                    }
+                    saberesSeleccionados.push({ modulo, area, saber });
+                    btn.classList.add('selected', 'bg-blue-600', 'text-white', 'border-blue-600');
+                    btn.classList.remove('bg-gray-100', 'border-gray-300');
+                }
+                actualizarSeleccionUI();
+            }
+
+            function actualizarSeleccionUI() {
+                contadorSel.innerText = saberesSeleccionados.length;
+                if (saberesSeleccionados.length === 0) {
+                    listaSel.innerHTML = '<span class="text-gray-400 italic">Ninguno</span>';
+                } else {
+                    listaSel.innerHTML = saberesSeleccionados.map(s => 
+                        `<span class="bg-blue-100 text-blue-800 text-xs px-3 py-1.5 rounded-full flex items-center gap-1"><i class="fas fa-tag"></i>${s.saber} (${s.modulo})</span>`
+                    ).join('');
+                }
+                // guardar en búsquedas recientes (simulado)
+                if (saberesSeleccionados.length > 0) {
+                    const nombres = saberesSeleccionados.map(s => s.saber).join(' + ');
+                    const ciclo = cicloSelect.value;
+                    const nivel = nivelSelect.value;
+                    const item = `${nombres} (${ciclo} - ${nivel})`;
+                    let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+                    recent.unshift(item);
+                    if (recent.length > 6) recent.pop();
+                    localStorage.setItem('recentSearches', JSON.stringify(recent));
+                    mostrarRecientes();
+                }
+            }
+
+            // Generar prompt para copilot/chatgpt
+            generarBtn.addEventListener('click', () => {
+                if (saberesSeleccionados.length === 0) {
+                    promptSalida.innerText = '⚠️ Por favor selecciona al menos un saber conceptual.';
+                    return;
+                }
+                const ciclo = cicloSelect.options[cicloSelect.selectedIndex].text;
+                const nivel = nivelSelect.value;
+                const saberesStr = saberesSeleccionados.map(s => `• ${s.saber} (módulo ${s.modulo})`).join('\n');
+                const prompt = `Eres un asesor curricular del PNFT. Diseña una mediación pedagógica para ${ciclo}, nivel ${nivel}.
+
+Saberes conceptuales seleccionados:
+${saberesStr}
+
+Basado en el PNFT 2026, elabora una propuesta que incluya:
+1. **Articulación**: integrar los saberes con los saberes procedimentales (reconocer patrones, abstraer, programar, etc.) y actitudinales (aprender del error, tolerancia a la frustración).
+2. **Indicadores de logro**: redacta dos indicadores de logro coherentes con los saberes seleccionados (según las tablas de la guía).
+3. **Metodología activa**: sugiere si aplica ABJ, ABR o Design Thinking, y describe brevemente la actividad.
+4. **Actividades**: 
+   - Una actividad DESCONECTADA (sin dispositivos digitales, usando materiales concretos).
+   - Una actividad PRÁCTICA EN EQUIPO (con dispositivos, programación o robótica).
+5. **Evaluación**: desglosa según el reglamento: trabajo cotidiano (60%), tareas (10%) y prueba de ejecución (20%) o proyectos para secundaria.
+6. **Opcional**: sugerencia para estudiantes con NEE (apoyos visuales, motrices, etc.)
+
+Redacta de manera clara para que el docente la adapte a su contexto.`;
+                promptSalida.innerText = prompt;
+                // bitácora simulada: opcional
+            });
+
+            // Exportar a PDF usando html2pdf del área de prompt
+            exportarBtn.addEventListener('click', () => {
+                const element = document.createElement('div');
+                element.innerHTML = `<h2>Mediación sugerida PNFT</h2><pre>${promptSalida.innerText}</pre>`;
+                html2pdf().from(element).save('planificacion_PNFT.pdf');
+            });
+
+            // Pestañas
+            const tabs = {
+                plan: document.getElementById('tabPlan'),
+                recursos: document.getElementById('tabRecursos'),
+                admin: document.getElementById('tabAdmin')
+            };
+            document.getElementById('tabPlanBtn').addEventListener('click', () => mostrarTab('plan'));
+            document.getElementById('tabRecursosBtn').addEventListener('click', () => mostrarTab('recursos'));
+            document.getElementById('tabAdminBtn').addEventListener('click', () => mostrarTab('admin'));
+
+            function mostrarTab(tabName) {
+                Object.keys(tabs).forEach(key => tabs[key].classList.add('hidden'));
+                tabs[tabName].classList.remove('hidden');
+                // marcar botones
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.replace('bg-white','bg-gray-100'), btn.classList.remove('border-blue-600'));
+                if(tabName==='plan') document.getElementById('tabPlanBtn').classList.replace('bg-gray-100','bg-white');
+                if(tabName==='recursos') document.getElementById('tabRecursosBtn').classList.replace('bg-gray-100','bg-white');
+                if(tabName==='admin') document.getElementById('tabAdminBtn').classList.replace('bg-gray-100','bg-white');
+            }
+
+            // recientes desde localStorage
+            function mostrarRecientes() {
+                const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+                recentList.innerHTML = recent.map(r => `<li>${r}</li>`).join('');
+            }
+            document.getElementById('clearRecentBtn')?.addEventListener('click', ()=>{
+                localStorage.removeItem('recentSearches');
+                mostrarRecientes();
+            });
+            // copiar bitácora
+            document.getElementById('copiarBitacora')?.addEventListener('click', ()=>{
+                const texto = document.getElementById('bitacoraTexto').value;
+                navigator.clipboard.writeText(texto);
+                alert('Texto copiado al portapapeles');
+            });
+
+            // Inicializar
+            renderNiveles();
+            mostrarRecientes();
+            // valor por defecto plan activa
+        })();
+    </script>
+
+    <!-- Ajuste manual de colores para los badges dinámicos (Tailwind no genera dinámicamente bg-${color}-500 en clase, pero se usan colores fijos en el HTML estático. Para simplificar se usan azul, índigo, etc fijos, pero los badges no sufren. -->
+    <!-- Añadimos clases de color manualmente para que los chips se vean -->
+    <style>
+        .bg-blue-500 { background-color: #3b82f6; }
+        .bg-indigo-500 { background-color: #6366f1; }
+        .bg-purple-500 { background-color: #a855f7; }
+        .bg-pink-500 { background-color: #ec4899; }
+        .saber-chip { user-select: none; }
+    </style>
+</body>
+</html>
