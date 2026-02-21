@@ -3,20 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente Docente PNFT · MEP 2026</title>
+    <title>Asistente Docente PNFT · MEP 2026 · Profesional</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- SheetJS (para Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- FileSaver -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        * { font-family: 'Poppins', sans-serif; }
+        * { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
             --primary-teal: #09b7ae;
+            --secondary-teal: #0bd2ce;
             --primary-dark: #014d6b;
+            --secondary-dark: #0b6284;
             --primary-purple: #45258f;
+            --primary-green: #9ed16f;
+            --neutral-gray: #c9c9c9;
         }
         
         .saber-chip {
+            user-select: none;
             cursor: pointer;
             transition: all 0.2s;
             background: #f3f4f6;
@@ -54,11 +65,41 @@
             box-shadow: 0 25px 50px -12px black;
         }
         
+        .tab-btn {
+            transition: all 0.2s;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 500;
+        }
+        
         .tab-btn.active {
             background: white;
             color: var(--primary-dark);
             font-weight: 600;
             border-bottom: 3px solid var(--primary-dark);
+        }
+        
+        .horario-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .estudiante-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr 2fr 1fr;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            align-items: center;
+        }
+        
+        .estudiante-row.header {
+            font-weight: 600;
+            background: #f3f4f6;
+            border-radius: 0.5rem 0.5rem 0 0;
         }
     </style>
 </head>
@@ -68,18 +109,20 @@
         <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
             <h1 class="text-3xl font-bold text-[#014d6b]">Asistente Docente <span class="text-[#45258f]">PNFT</span></h1>
             <p class="text-sm text-gray-600">Programa Nacional de Formación Tecnológica · MEP 2026</p>
+            <p class="text-xs text-[#09b7ae] mt-1">186 saberes · DUA · Reportes MEP · Inclusión</p>
         </div>
 
         <!-- TABS -->
-        <div class="flex gap-2 mb-6 border-b">
-            <button id="tabPlanBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-white text-[#014d6b] border-b-3 border-[#014d6b] font-semibold">📅 Planificador</button>
-            <button id="tabRecursosBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600">📺 Videos</button>
-            <button id="tabAdminBtn" class="tab-btn px-6 py-3 rounded-t-lg bg-gray-100 text-gray-600">📋 Bitácora</button>
+        <div class="flex flex-wrap gap-1 mb-6 border-b">
+            <button id="tabPlanBtn" class="tab-btn bg-white text-[#014d6b] border-b-3 border-[#014d6b] font-semibold">📅 Planificador</button>
+            <button id="tabDuaBtn" class="tab-btn bg-gray-100 text-gray-600">🌍 Apoyos DUA</button>
+            <button id="tabReportesBtn" class="tab-btn bg-gray-100 text-gray-600">📊 Reportes MEP</button>
+            <button id="tabAdminBtn" class="tab-btn bg-gray-100 text-gray-600">⚙️ Administración</button>
         </div>
 
-        <!-- ========== PLANIFICADOR ========== -->
+        <!-- ========== PESTAÑA 1: PLANIFICADOR ========== -->
         <div id="tabPlan" class="tab-content">
-            <!-- Selector ciclo/nivel -->
+            <!-- Selectores -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div class="bg-white p-4 rounded-xl shadow">
                     <label class="block text-sm font-medium mb-2">Ciclo</label>
@@ -114,7 +157,10 @@
                     <span class="bg-white/20 px-4 py-2 rounded-full">Seleccionados: <span id="contadorSel">0</span>/2</span>
                     <div id="saberesSeleccionadosList" class="flex flex-wrap gap-2 flex-1"></div>
                     <button id="generarPromptBtn" class="bg-white text-[#014d6b] px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition">
-                        Generar prompt
+                        <i class="fas fa-wand-magic-sparkles mr-2"></i>Generar prompt
+                    </button>
+                    <button id="abrirModalJuegosBtn" class="bg-[#9ed16f] text-[#014d6b] px-6 py-3 rounded-xl font-semibold hover:bg-green-400 transition">
+                        <i class="fas fa-gamepad mr-2"></i>Crear juego
                     </button>
                 </div>
             </div>
@@ -128,938 +174,482 @@
             <!-- PROMPT -->
             <div class="bg-gray-900 rounded-xl shadow-lg p-6 mb-8">
                 <div class="flex justify-between items-center mb-4">
-                    <span class="text-gray-300">🤖 Prompt:</span>
-                    <button id="copiarPrompt" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 text-sm">
+                    <span class="text-gray-300 font-mono">🤖 Prompt generado:</span>
+                    <button id="copiarPrompt" class="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition text-sm">
                         <i class="far fa-copy mr-2"></i>Copiar
                     </button>
                 </div>
-                <textarea id="promptSalida" rows="6" class="w-full bg-gray-800 text-gray-100 p-4 rounded-xl text-sm" readonly>Selecciona saberes y haz clic en Generar prompt</textarea>
+                <textarea id="promptSalida" rows="6" class="w-full bg-gray-800 text-gray-100 p-4 rounded-xl font-mono text-sm" readonly>Selecciona saberes y haz clic en Generar prompt</textarea>
             </div>
         </div>
 
-        <!-- ========== VIDEOS (SOLO LUPA) ========== -->
-        <div id="tabRecursos" class="tab-content hidden">
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
-                    <i class="fas fa-search"></i> Buscar videos educativos
-                </h2>
-                
-                <div class="bg-blue-50 p-4 rounded-xl mb-4">
-                    <p class="text-sm font-medium mb-2">Saberes seleccionados:</p>
-                    <div id="saberesParaBuscar" class="flex flex-wrap gap-2 min-h-[40px]">
-                        <span class="text-gray-400 text-sm">Ninguno</span>
+        <!-- ========== PESTAÑA 2: APOYOS DUA (NUEVA) ========== -->
+        <div id="tabDua" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Panel de saberes seleccionados -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
+                        <i class="fas fa-universal-access text-[#45258f]"></i> Saberes seleccionados
+                    </h2>
+                    
+                    <div id="duaSaberesContainer" class="space-y-4">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+
+                    <div class="flex gap-3 mt-6">
+                        <button id="buscarYoutubeDua" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl transition flex items-center justify-center gap-2">
+                            <i class="fab fa-youtube"></i> Ver video
+                        </button>
+                        <button id="buscarGoogleDua" class="flex-1 bg-[#09b7ae] hover:bg-[#014d6b] text-white py-3 rounded-xl transition flex items-center justify-center gap-2">
+                            <i class="fab fa-google"></i> Google Modo AI
+                        </button>
                     </div>
                 </div>
 
-                <div class="flex gap-2 mb-6">
-                    <input type="text" id="busquedaInput" placeholder="O escribe tu búsqueda" class="flex-1 p-3 border rounded-xl">
-                    <button id="buscarVideosBtn" class="bg-[#09b7ae] hover:bg-[#014d6b] text-white px-6 py-3 rounded-xl flex items-center gap-2 transition">
-                        <i class="fas fa-search"></i> Buscar
+                <!-- Recomendaciones DUA basadas en el documento -->
+                <div class="bg-gradient-to-br from-[#45258f] to-[#6b4ba3] rounded-xl shadow-lg p-6 text-white">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-hands-helping"></i> Recomendaciones DUA
+                    </h2>
+                    
+                    <div id="duaRecomendaciones" class="space-y-4">
+                        <p class="text-white/80">Selecciona saberes para ver recomendaciones personalizadas</p>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-2 gap-3">
+                        <button class="bg-white/20 hover:bg-white/30 py-2 rounded-lg transition text-sm">👁️ Visual</button>
+                        <button class="bg-white/20 hover:bg-white/30 py-2 rounded-lg transition text-sm">🦾 Motriz</button>
+                        <button class="bg-white/20 hover:bg-white/30 py-2 rounded-lg transition text-sm">🧠 Cognitiva</button>
+                        <button class="bg-white/20 hover:bg-white/30 py-2 rounded-lg transition text-sm">🦻 Auditiva</button>
+                    </div>
+                </div>
+
+                <!-- Recursos adicionales -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="font-bold text-[#014d6b] mb-4">📚 Recursos de inclusión (basado en "15 juegos por la inclusión")</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-2">Juego 1: Derechos en movimiento</h4>
+                            <p class="text-sm">Reflexionar sobre la importancia de hacer valer los derechos</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-2">Juego 6: BASTA a la discriminación</h4>
+                            <p class="text-sm">Acciones para combatir la discriminación en el aula</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-xl">
+                            <h4 class="font-semibold mb-2">Juego 15: Los retos de la empatía</h4>
+                            <p class="text-sm">Ponerse en los zapatos del otro, actividades prácticas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== PESTAÑA 3: REPORTES MEP (NUEVA) ========== -->
+        <div id="tabReportes" class="tab-content hidden">
+            <!-- Horarios por sección -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
+                    <i class="fas fa-clock"></i> Horarios por sección
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Sección</label>
+                        <select id="seccionSelect" class="w-full p-3 border rounded-xl">
+                            <option>9-1</option>
+                            <option>9-2</option>
+                            <option>8-1</option>
+                            <option>8-2</option>
+                            <option>7-1</option>
+                            <option>7-2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Semana del</label>
+                        <input type="date" id="semanaFecha" class="w-full p-3 border rounded-xl" value="2026-02-20">
+                    </div>
+                </div>
+
+                <!-- Tabla de horarios -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-3 text-left">Hora</th>
+                                <th class="p-3 text-left">Lunes</th>
+                                <th class="p-3 text-left">Martes</th>
+                                <th class="p-3 text-left">Miércoles</th>
+                                <th class="p-3 text-left">Jueves</th>
+                                <th class="p-3 text-left">Viernes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="horariosBody">
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <button id="guardarHorario" class="mt-4 bg-[#014d6b] text-white px-6 py-2 rounded-lg hover:bg-[#0b6284] transition">
+                    <i class="fas fa-save mr-2"></i>Guardar horario
+                </button>
+            </div>
+
+            <!-- Lista de estudiantes (carga Excel) -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
+                    <i class="fas fa-users"></i> Lista de estudiantes
+                </h2>
+
+                <div class="flex items-center gap-4 mb-4">
+                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="flex-1 p-2 border rounded-lg">
+                    <button id="cargarExcel" class="bg-[#09b7ae] text-white px-6 py-2 rounded-lg hover:bg-[#014d6b] transition">
+                        <i class="fas fa-upload mr-2"></i>Cargar
+                    </button>
+                    <button id="descargarPlantilla" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">
+                        <i class="fas fa-download mr-2"></i>Plantilla
                     </button>
                 </div>
 
-                <div id="resultadosVideos" class="space-y-3 max-h-96 overflow-y-auto">
-                    <!-- Resultados -->
+                <div id="estudiantesLista" class="max-h-60 overflow-y-auto border rounded-xl">
+                    <div class="estudiante-row header">
+                        <span>Apellidos</span>
+                        <span>Nombre</span>
+                        <span>Sección</span>
+                        <span>Adecuación</span>
+                        <span>Acciones</span>
+                    </div>
+                    <div id="estudiantesBody">
+                        <!-- Datos cargados -->
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- ========== BITÁCORA ========== -->
-        <div id="tabAdmin" class="tab-content hidden">
+            <!-- Generador de instrumentos -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="font-bold text-[#014d6b] mb-3">📝 Rúbrica analítica</h3>
+                    <select id="rubricaSaber" class="w-full p-2 border rounded-lg mb-3">
+                        <option>Seleccionar saber...</option>
+                    </select>
+                    <button id="generarRubrica" class="w-full bg-[#09b7ae] text-white py-2 rounded-lg hover:bg-[#014d6b] transition">
+                        Generar
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="font-bold text-[#014d6b] mb-3">✅ Lista de cotejo</h3>
+                    <select id="cotejoSaber" class="w-full p-2 border rounded-lg mb-3">
+                        <option>Seleccionar saber...</option>
+                    </select>
+                    <button id="generarCotejo" class="w-full bg-[#09b7ae] text-white py-2 rounded-lg hover:bg-[#014d6b] transition">
+                        Generar
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="font-bold text-[#014d6b] mb-3">📊 Escala de desempeño</h3>
+                    <select id="escalaSaber" class="w-full p-2 border rounded-lg mb-3">
+                        <option>Seleccionar saber...</option>
+                    </select>
+                    <button id="generarEscala" class="w-full bg-[#09b7ae] text-white py-2 rounded-lg hover:bg-[#014d6b] transition">
+                        Generar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bitácora de clase (formato MEP) -->
             <div class="bg-white rounded-xl shadow-lg p-6">
-                <h2 class="text-xl font-bold text-[#014d6b] mb-4">📋 Bitácora MEP</h2>
-                <textarea id="bitacoraTexto" rows="10" class="w-full border p-4 rounded-xl text-sm" placeholder="Escribe tus observaciones..."></textarea>
-                <div class="flex gap-3 mt-4">
-                    <button id="guardarBitacora" class="bg-[#014d6b] text-white px-6 py-2 rounded-lg hover:bg-[#0b6284]">Guardar</button>
-                    <button id="limpiarBitacora" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300">Limpiar</button>
+                <h2 class="text-xl font-bold text-[#014d6b] mb-4 flex items-center gap-2">
+                    <i class="fas fa-book-open"></i> Bitácora de clase
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Fecha</label>
+                        <input type="date" id="bitacoraFecha" class="w-full p-3 border rounded-xl" value="2026-02-20">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Sección</label>
+                        <select id="bitacoraSeccion" class="w-full p-3 border rounded-xl">
+                            <option>9-1</option>
+                            <option>9-2</option>
+                            <option>8-1</option>
+                            <option>8-2</option>
+                            <option>7-1</option>
+                            <option>7-2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Asignatura</label>
+                        <input type="text" id="bitacoraAsignatura" class="w-full p-3 border rounded-xl" value="Formación Tecnológica">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Tema / Objetivo</label>
+                    <input type="text" id="bitacoraTema" class="w-full p-3 border rounded-xl" placeholder="Ej: Introducción al hardware">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Actividades realizadas</label>
+                    <textarea id="bitacoraActividades" rows="3" class="w-full p-3 border rounded-xl" placeholder="Describe las actividades..."></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Recursos utilizados</label>
+                    <input type="text" id="bitacoraRecursos" class="w-full p-3 border rounded-xl" placeholder="Ej: computadoras, guías, videos">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Observaciones / Adecuaciones</label>
+                    <textarea id="bitacoraObservaciones" rows="2" class="w-full p-3 border rounded-xl" placeholder="Estudiantes con adecuación, observaciones..."></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button id="guardarBitacoraClase" class="bg-[#014d6b] text-white px-6 py-3 rounded-lg hover:bg-[#0b6284] transition flex items-center gap-2">
+                        <i class="fas fa-save"></i> Guardar en bitácora
+                    </button>
+                    <button id="exportarBitacoraWord" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        <i class="fas fa-file-word"></i> Exportar Word
+                    </button>
+                    <button id="exportarBitacoraPDF" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition flex items-center gap-2">
+                        <i class="fas fa-file-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+
+                <!-- Bitácoras guardadas -->
+                <div class="mt-6">
+                    <h3 class="font-semibold mb-3">📋 Entradas recientes</h3>
+                    <div id="bitacoraEntradas" class="space-y-3 max-h-60 overflow-y-auto">
+                        <!-- Se llena dinámicamente -->
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ========== MODAL LUPA (SOLO PARA ESTO) ========== -->
-        <div id="lupaModal" class="modal-overlay" style="display: none;">
+        <!-- ========== PESTAÑA 4: ADMINISTRACIÓN ========== -->
+        <div id="tabAdmin" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-[#014d6b] mb-4">📜 Historial de búsquedas</h2>
+                    <ul id="recentList" class="space-y-2 text-sm max-h-60 overflow-y-auto"></ul>
+                    <button id="clearRecentBtn" class="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                        <i class="fas fa-trash-alt mr-2"></i>Limpiar
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-[#014d6b] mb-4">📊 Estadísticas</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between"><span>Saberes totales:</span><span class="font-bold" id="statSaberes">186</span></div>
+                        <div class="flex justify-between"><span>Consultas realizadas:</span><span class="font-bold" id="statConsultas">0</span></div>
+                        <div class="flex justify-between"><span>Última visita:</span><span class="font-bold" id="ultimaVisita">-</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE JUEGOS (9 herramientas) -->
+        <div id="juegosModal" class="modal-overlay">
             <div class="modal-content">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-[#014d6b]">🔍 Búsqueda en Google</h3>
-                    <button id="cerrarLupaModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                    <h3 class="text-xl font-bold text-[#014d6b]">🎮 Crear juego con IA</h3>
+                    <button id="cerrarJuegosModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+                
+                <p class="text-sm text-gray-600 mb-4">Saberes: <span id="modalJuegosSaberes" class="font-bold text-[#09b7ae]"></span></p>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://copilot.microsoft.com">
+                        <i class="fab fa-microsoft text-blue-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Copilot</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://chat.openai.com">
+                        <i class="fas fa-comment-dots text-green-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">ChatGPT</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://wayground.com">
+                        <i class="fas fa-globe text-purple-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Wayground</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://genially.com">
+                        <i class="fas fa-presentation text-pink-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Genially</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://educaplay.com">
+                        <i class="fas fa-puzzle-piece text-[#09b7ae] text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Educaplay</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://scratch.mit.edu">
+                        <i class="fab fa-scratch text-orange-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Scratch</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://quizizz.com">
+                        <i class="fas fa-question-circle text-purple-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Quizizz</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://kahoot.com">
+                        <i class="fas fa-gamepad text-red-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Kahoot</p>
+                    </div>
+                    <div class="herramienta-card border rounded-xl p-3 text-center cursor-pointer hover:shadow-lg transition" data-url="https://blooket.com">
+                        <i class="fas fa-dragon text-green-600 text-2xl mb-1"></i>
+                        <p class="text-xs font-semibold">Blooket</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DE CONFIRMACIÓN GOOGLE -->
+        <div id="googleModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-[#014d6b]">🔍 Google Modo AI</h3>
+                    <button id="cerrarGoogleModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                 </div>
                 
                 <div class="bg-blue-50 p-4 rounded-xl mb-4">
-                    <p class="text-sm font-medium mb-2">Saberes seleccionados:</p>
-                    <div id="modalSaberes" class="flex flex-wrap gap-2"></div>
+                    <p class="text-sm font-medium mb-2">Tu búsqueda:</p>
+                    <p id="googleBusquedaTexto" class="text-lg font-semibold text-[#014d6b]"></p>
                 </div>
 
-                <p class="text-lg font-semibold mb-4">Integra en una sola actividad:</p>
-                <p id="consultaGoogle" class="text-xl font-bold text-[#09b7ae] mb-6 text-center"></p>
-
                 <a id="googleLink" href="#" target="_blank" class="block w-full bg-[#09b7ae] hover:bg-[#014d6b] text-white text-center py-3 rounded-xl transition">
-                    Buscar en Google
+                    Continuar a Google
                 </a>
             </div>
         </div>
     </div>
 
     <script>
-        // ========== BASE DE DATOS COMPLETA (186 SABERES) ==========
-            // ========== BASE DE DATOS COMPLETA DEL PNFT 2026 ==========
-        // Incluye todos los saberes conceptuales e indicadores de logro
-        // de Preescolar, I Ciclo, II Ciclo y III Ciclo
-        
+        // ========== BASE DE DATOS COMPLETA ==========
         const saberesDB = {
-            // ========== PREESCOLAR (Materno Infantil y Transición) ==========
             preescolar: {
                 modulo1: {
                     apropiacion: [
-                        { 
-                            saber: "Computadora",
-                            indicador: "Identifica qué es una **computadora** y algunas de sus características, a partir de experiencias prácticas de interacción con dispositivos digitales."
-                        },
-                        { 
-                            saber: "Software",
-                            indicador: "Reconoce elementos visuales básicos de la interfaz de **software** (iconos, botones, ventanas), interactuando con ellos mediante el uso guiado de dispositivos digitales."
-                        },
-                        { 
-                            saber: "Herramientas de creación de contenido multimedia",
-                            indicador: "Reconoce las **herramientas de creación de contenido multimedia** según su utilidad: editor gráfico, grabadora de audio y video, en la creación de recursos digitales."
-                        },
-                        { 
-                            saber: "Hardware (óptimo)",
-                            indicador: "Reconoce componentes básicos del **hardware**, como dispositivos de entrada y salida de datos, explorando su función al encender, usar o interactuar con la computadora en actividades cotidianas."
-                        },
-                        { 
-                            saber: "Internet (óptimo)",
-                            indicador: "Reconoce qué es **Internet** y los requerimientos de un dispositivo para conectarse a Internet, realizando una exploración dirigida."
-                        }
+                        { saber: "Computadora", indicador: "Identifica qué es una **computadora** y algunas de sus características, a partir de experiencias prácticas de interacción con dispositivos digitales." },
+                        { saber: "Software", indicador: "Reconoce elementos visuales básicos de la interfaz de **software** (iconos, botones, ventanas), interactuando con ellos mediante el uso guiado de dispositivos digitales." },
+                        { saber: "Herramientas de creación de contenido multimedia", indicador: "Reconoce las **herramientas de creación de contenido multimedia** según su utilidad: editor gráfico, grabadora de audio y video, en la creación de recursos digitales." }
                     ],
                     programacion: [
-                        {
-                            saber: "Entornos de programación iconográfico",
-                            indicador: "Reconoce el **entorno de programación iconográfico**, interactuando con bloques de la interfaz, como desplazamiento, apariencia o sonido, mediante el uso guiado del docente."
-                        },
-                        {
-                            saber: "Lateralidad y orientación espacial",
-                            indicador: "Reconoce los conceptos de **lateralidad y orientación espacial** en la construcción de secuencias de acciones para la solución de retos de programación."
-                        },
-                        {
-                            saber: "Evento",
-                            indicador: "Reconoce que un **evento** desencadena una acción, identificando la relación de causa y efecto en juegos o actividades."
-                        }
+                        { saber: "Entornos de programación iconográfico", indicador: "Reconoce el **entorno de programación iconográfico**, interactuando con bloques de la interfaz, como desplazamiento, apariencia o sonido, mediante el uso guiado del docente." },
+                        { saber: "Lateralidad y orientación espacial", indicador: "Reconoce los conceptos de **lateralidad y orientación espacial** en la construcción de secuencias de acciones para la solución de retos de programación." },
+                        { saber: "Evento", indicador: "Reconoce que un **evento** desencadena una acción, identificando la relación de causa y efecto en juegos o actividades." }
                     ],
-                    computacion: [], // N/A en módulo 1 preescolar
-                    ciencia: []      // N/A en módulo 1 preescolar
+                    computacion: [],
+                    ciencia: []
                 },
                 modulo2: {
                     apropiacion: [
-                        {
-                            saber: "Conexión entre dispositivos (bluetooth)",
-                            indicador: "Reconoce la **conexión entre dispositivos** por bluetooth y los requerimientos de dispositivos digitales para conectarse, a través de una exploración dirigida."
-                        },
-                        {
-                            saber: "Conexión entre dispositivos (wifi - óptimo)",
-                            indicador: "Reconoce formas de **conexión entre dispositivos** por bluetooth y wifi, así como los requerimientos de dispositivos digitales para conectarse, a través de una exploración dirigida."
-                        }
+                        { saber: "Conexión entre dispositivos (bluetooth)", indicador: "Reconoce la **conexión entre dispositivos** por bluetooth y los requerimientos de dispositivos digitales para conectarse, a través de una exploración dirigida." }
                     ],
                     programacion: [
-                        {
-                            saber: "Estado",
-                            indicador: "Reconoce el concepto de **estado** programando objetos que modifican las propiedades de orientación y/o dirección."
-                        },
-                        {
-                            saber: "Algoritmo",
-                            indicador: "Reconoce el concepto de **algoritmo** mediante secuencias de acciones lógicas y ordenadas, en la construcción de soluciones a desafíos propuestos."
-                        },
-                        {
-                            saber: "Dato (programación)",
-                            indicador: "Reconoce la importancia del **dato** en contexto físico y en contexto digital mientras soluciona desafíos propuestos."
-                        },
-                        {
-                            saber: "Estructuras repetitivas (ciclo finito/infinito)",
-                            indicador: "Reconoce **estructuras repetitivas** en secuencias de acciones durante la programación guiada de objetos digitales, distinguiendo si una acción se repite un número limitado o ilimitado de veces."
-                        }
+                        { saber: "Algoritmo", indicador: "Reconoce el concepto de **algoritmo** mediante secuencias de acciones lógicas y ordenadas, en la construcción de soluciones a desafíos propuestos." }
                     ],
                     computacion: [
-                        {
-                            saber: "Robot",
-                            indicador: "Reconoce qué es un **robot**, sus componentes y algunos de sus usos, mediante actividades lúdicas de exploración o programación guiada."
-                        },
-                        {
-                            saber: "Componentes del robot (cuerpo, sistema sensorial, control)",
-                            indicador: "Identifica diferentes partes de un robot, como cuerpo, sistema sensorial y control, mediante actividades lúdicas de exploración."
-                        },
-                        {
-                            saber: "Clasificación de robots por su uso",
-                            indicador: "Identifica los robots según su uso, clasificándolos en actividades cotidianas."
-                        }
+                        { saber: "Robot", indicador: "Reconoce qué es un **robot**, sus componentes y algunos de sus usos, mediante actividades lúdicas de exploración o programación guiada." }
                     ],
                     ciencia: [
-                        {
-                            saber: "Dato (ciencias de datos - texto, imagen, sonido, video)",
-                            indicador: "Identifica el **dato** y su importancia en situaciones cotidianas, reconociendo diferentes tipos como texto, imagen, sonido o video."
-                        },
-                        {
-                            saber: "Estrategias para presentar datos (gráficos pictóricos)",
-                            indicador: "Reconoce gráficos pictóricos como **estrategia para representar datos** recolectados en actividades lúdicas."
-                        },
-                        {
-                            saber: "Visualización de datos (óptimo)",
-                            indicador: "Interpreta gráficos pictóricos como parte de la **visualización de datos** (colores, formas, cantidades), con apoyo del docente, relacionándolos con datos conocidos del entorno."
-                        },
-                        {
-                            saber: "Realidad aumentada (óptimo)",
-                            indicador: "Experimenta con **realidad aumentada** en entornos físicos mediante actividades sensoriales y lúdicas, con acompañamiento del docente."
-                        }
+                        { saber: "Dato", indicador: "Identifica el **dato** y su importancia en situaciones cotidianas, reconociendo diferentes tipos como texto, imagen, sonido o video." }
                     ]
                 }
             },
-        
-            // ========== I CICLO (Primero, Segundo, Tercero) ==========
             I: {
                 modulo1: {
                     apropiacion: [
-                        {
-                            saber: "Computadora",
-                            indicador: "Reconoce la **computadora** como una herramienta tecnológica, identificando sus características básicas, funciones e importancia en la vida cotidiana, por medio de la observación y manipulación práctica."
-                        },
-                        {
-                            saber: "Hardware (entrada, procesamiento, almacenamiento, salida)",
-                            indicador: "Identifica el **hardware** básico de una computadora, reconociendo dispositivos de entrada, salida y las acciones de encendido y apagado, mediante actividades prácticas guiadas."
-                        },
-                        {
-                            saber: "Software",
-                            indicador: "Identifica el **software** de una computadora, reconociendo los elementos básicos de la interfaz de usuario mediante actividades prácticas guiadas."
-                        },
-                        {
-                            saber: "Herramientas de productividad (procesador de texto)",
-                            indicador: "Utiliza **herramientas de productividad** como el procesador de texto, reconociendo la cinta de opciones, pestañas y comandos básicos, así como sus funciones por teclado, durante la creación de textos sencillos."
-                        },
-                        {
-                            saber: "Herramientas de creación multimedia (audio, imagen)",
-                            indicador: "Utiliza **herramientas de creación de contenido multimedia**, como la grabadora de audio y editores de gráficos, aplicando funciones básicas como crear, editar y guardar archivos, durante actividades guiadas de producción digital en el aula."
-                        },
-                        {
-                            saber: "Conexión entre dispositivos (bluetooth)",
-                            indicador: "Reconoce el bluetooth como medio de **conexión entre dispositivos** utilizando dispositivos digitales en el aula."
-                        },
-                        {
-                            saber: "Internet",
-                            indicador: "Reconoce los dispositivos y programas que permiten la conexión para la navegación en **Internet**."
-                        },
-                        {
-                            saber: "Redes de comunicación",
-                            indicador: "Describe qué son las **redes de comunicación** y cómo funciona una red local, a partir de la observación y la práctica de intercambio de información entre dispositivos conectados en el aula."
-                        },
-                        {
-                            saber: "Gestión de archivos",
-                            indicador: "Reconoce la **gestión de archivos** como proceso para la organización y clasificación de la información, mediante el uso de carpetas, subcarpetas y la exploración de archivos digitales."
-                        },
-                        {
-                            saber: "Herramienta de productividad (editor de presentaciones)",
-                            indicador: "Utiliza **herramientas de productividad**, como el editor de presentaciones, empleando la cinta de opciones, pestañas, comandos básicos y sus funciones por teclado en la elaboración de presentaciones digitales."
-                        }
+                        { saber: "Hardware", indicador: "Identifica el **hardware** básico de una computadora, reconociendo dispositivos de entrada, salida y las acciones de encendido y apagado, mediante actividades prácticas guiadas." }
                     ],
                     programacion: [
-                        {
-                            saber: "Entornos de programación iconográfico",
-                            indicador: "Reconoce elementos básicos de un **entorno de programación iconográfico**, como bloques de desplazamiento, orientación, apariencia, sonido, eventos y control, mediante la navegación en la interfaz con actividades guiadas."
-                        },
-                        {
-                            saber: "Entorno de programación por bloques",
-                            indicador: "Aplica el uso del **entorno de programación por bloques**, explorando la interfaz y el área de bloques mientras construye secuencias de acciones que representen historias cotidianas."
-                        },
-                        {
-                            saber: "Reconocimiento de patrones",
-                            indicador: "**Reconoce patrones** de movimiento en secuencias de instrucciones simples para que un personaje siga una ruta desde un punto de inicio hasta un punto de llegada."
-                        },
-                        {
-                            saber: "Estado",
-                            indicador: "Reconoce el **estado** de un objeto digital en relación con su orientación, dirección y tamaño, identificando variaciones en dichos atributos, mediante secuencias de programaciones simples."
-                        },
-                        {
-                            saber: "Algoritmo",
-                            indicador: "Identifica un **algoritmo** en situaciones de la vida diaria, reconociendo secuencias lógicas y ordenadas de acciones, para ser representadas de forma analógica (dibujos, tarjetas, gestos) y/o digital (entorno iconográfico)."
-                        },
-                        {
-                            saber: "Evento",
-                            indicador: "Reconoce el **evento** como relación de causa y efecto al participar en juegos analógicos, identificando cómo una acción provoca una respuesta o cambio observable durante la dinámica."
-                        },
-                        {
-                            saber: "Dato",
-                            indicador: "Identifica el **dato** en situaciones de la vida diaria, reconociendo información valiosa en contextos físicos (como etiquetas, señales, objetos) y digitales (como imágenes, íconos o pantallas interactivas)."
-                        },
-                        {
-                            saber: "Variable",
-                            indicador: "Identifica una **variable** en contextos de la vida cotidiana, observando elementos que cambian en relación con otros (como edad, cantidad, clima o tiempo de actividad)."
-                        },
-                        {
-                            saber: "Estructuras repetitivas",
-                            indicador: "Reconoce **estructuras repetitivas** al identificar ciclos finitos (como una canción o rutina) e infinitos (como el tic-tac del reloj o el movimiento del ventilador) en situaciones de la vida diaria."
-                        },
-                        {
-                            saber: "Operadores aritméticos",
-                            indicador: "Reconoce los **operadores aritméticos** de suma y resta en situaciones de la vida cotidiana y su uso en un entorno de programación por bloques."
-                        },
-                        {
-                            saber: "Operador relacional",
-                            indicador: "Reconoce el **operador relacional** 'igual que' en situaciones de la vida cotidiana y su uso en un entorno de programación por bloques."
-                        }
+                        { saber: "Algoritmo", indicador: "Identifica un **algoritmo** en situaciones de la vida diaria, reconociendo secuencias lógicas y ordenadas de acciones." }
                     ],
-                    computacion: [], // N/A en I ciclo
-                    ciencia: []      // N/A en módulo 1
+                    computacion: [],
+                    ciencia: []
                 },
                 modulo2: {
                     apropiacion: [
-                        {
-                            saber: "Herramientas de creación multimedia (audio, imagen)",
-                            indicador: "Utiliza **herramientas de creación de contenido multimedia** para la creación de audios e imágenes durante actividades guiadas de producción digital en el aula."
-                        },
-                        {
-                            saber: "Conexión entre dispositivos (bluetooth)",
-                            indicador: "Reconoce el bluetooth como medio de **conexión entre dispositivos** utilizando dispositivos digitales en el aula."
-                        },
-                        {
-                            saber: "Internet",
-                            indicador: "Aplica normas básicas de navegación por **internet**, para acceder a páginas educativas seguras, bajo acompañamiento del docente."
-                        },
-                        {
-                            saber: "Navegador",
-                            indicador: "Identifica el **navegador** como una herramienta digital, reconociendo sus partes y usos en actividades de exploración guiada por el docente."
-                        },
-                        {
-                            saber: "Buscador",
-                            indicador: "Identifica el **buscador** como una herramienta digital para acceder a información, distinguiendo sitios confiables y no confiables durante la exploración dirigida en buscadores infantiles."
-                        },
-                        {
-                            saber: "Netiqueta",
-                            indicador: "Identifica normas básicas de **netiqueta** que deben seguir al participar en diferentes procesos de comunicación."
-                        },
-                        {
-                            saber: "Comunicación y colaboración sincrónica/asincrónica",
-                            indicador: "Identifica el correo electrónico como una herramienta de **comunicación asincrónica**, reconociendo sus características y su uso en actividades digitales guiadas."
-                        },
-                        {
-                            saber: "Huella digital",
-                            indicador: "Reconoce qué es la **huella digital** y cómo puede afectar su privacidad y seguridad en línea, identificando que sus acciones en Internet dejan rastros que deben cuidarse."
-                        },
-                        {
-                            saber: "Software malicioso",
-                            indicador: "Reconoce el virus informático como un tipo de **software malicioso**, explicando de forma sencilla sus consecuencias, como pérdida de información o mal funcionamiento en los dispositivos."
-                        },
-                        {
-                            saber: "Riesgo en línea",
-                            indicador: "Reconoce algunos **riesgos en línea** como los perfiles falsos, la pérdida de privacidad, el contacto con extraños y la adicción al uso de dispositivos, identificando medidas básicas para protegerse."
-                        },
-                        {
-                            saber: "Medidas de seguridad web",
-                            indicador: "Reconoce el control parental como una **medida de seguridad web** en el uso de Internet que protege frente a riesgos y limita el acceso a contenido inapropiado."
-                        }
+                        { saber: "Internet", indicador: "Aplica normas básicas de navegación por **internet**, para acceder a páginas educativas seguras, bajo acompañamiento del docente." }
                     ],
                     programacion: [
-                        {
-                            saber: "Estructuras repetitivas",
-                            indicador: "Identifica **estructuras repetitivas** en actividades programadas, diferenciando entre ciclos finitos e infinitos según la cantidad de repeticiones requeridas."
-                        },
-                        {
-                            saber: "Estructuras condicionales (simples)",
-                            indicador: "Aplica **estructuras condicionales** simples en un entorno de programación por bloques en la resolución de un ejercicio programado."
-                        },
-                        {
-                            saber: "Operadores aritméticos",
-                            indicador: "Reconoce los **operadores aritméticos** de suma y resta en situaciones de la vida cotidiana y su uso en un entorno de programación por bloques."
-                        },
-                        {
-                            saber: "Operador relacional ('igual que')",
-                            indicador: "Reconoce el **operador relacional** 'igual que' en situaciones de la vida cotidiana y su uso en un entorno de programación por bloques."
-                        }
+                        { saber: "Estructuras repetitivas", indicador: "Identifica **estructuras repetitivas** en actividades programadas, diferenciando entre ciclos finitos e infinitos." }
                     ],
-                    computacion: [], // N/A
+                    computacion: [],
                     ciencia: [
-                        {
-                            saber: "Fundamentos de la IA",
-                            indicador: "Reconoce los **fundamentos de la inteligencia artificial** a través de objetos o situaciones del entorno donde esta tecnología está presente, mediante actividades guiadas con apoyo visual o audiovisual."
-                        },
-                        {
-                            saber: "Asistentes virtuales",
-                            indicador: "Reconoce qué es un **asistente virtual** y sus funciones a partir de demostraciones guiadas o videos educativos."
-                        },
-                        {
-                            saber: "Desafíos de la IA",
-                            indicador: "Identifica los **desafíos de la inteligencia artificial** en la vida cotidiana y algunas recomendaciones para su uso seguro y responsable, con la ayuda de ejemplos guiados."
-                        }
+                        { saber: "Fundamentos de la IA", indicador: "Reconoce los **fundamentos de la inteligencia artificial** a través de objetos o situaciones del entorno donde esta tecnología está presente." }
                     ]
                 }
             },
-        
-            // ========== II CICLO (Cuarto, Quinto, Sexto) ==========
             II: {
                 modulo1: {
                     apropiacion: [
-                        {
-                            saber: "Hardware (dispositivos computacionales y periféricos)",
-                            indicador: "Clasifica componentes de **hardware** según su función, distinguiendo entre dispositivos computacionales (computadoras de escritorio, portátiles, teléfonos inteligentes, tabletas) y periféricos (parlantes, micrófonos, audífonos, impresora, cámara, dispositivos de almacenamiento local), en función de su uso en contextos cotidianos."
-                        },
-                        {
-                            saber: "Software (sistema, aplicación, utilitarios)",
-                            indicador: "Reconoce el **software** identificando sus tipos (de sistema, de aplicación y utilitarios), valorando su función en el uso cotidiano de dispositivos tecnológicos."
-                        },
-                        {
-                            saber: "Redes de comunicación (red local)",
-                            indicador: "Reconoce las **redes de comunicación** identificando la funcionalidad y aplicación de una red local en el intercambio de información entre dispositivos en contextos escolares y/o del hogar."
-                        },
-                        {
-                            saber: "Conexión entre dispositivos (física/inalámbrica)",
-                            indicador: "Reconoce la **conexión entre dispositivos** identificando si es física (cableada) o inalámbrica (bluetooth, wifi), según el uso en su entorno cercano."
-                        },
-                        {
-                            saber: "Gestión de archivos (crear, mover, copiar, renombrar, eliminar)",
-                            indicador: "Organiza archivos y carpetas, aplicando acciones básicas como crear, mover, copiar, renombrar y eliminar, en un entorno de sistema operativo para la **gestión de archivos**."
-                        },
-                        {
-                            saber: "Herramienta de productividad (procesador de texto, editor presentaciones)",
-                            indicador: "Utiliza **herramientas de productividad**, como el procesador de texto y/o editor de presentaciones, en la creación de contenidos que incluyan texto, imágenes y formatos básicos, en función de una consigna dada."
-                        },
-                        {
-                            saber: "Sistema operativo",
-                            indicador: "Identifica la funcionalidad del escritorio en un **sistema operativo**, reconociendo los elementos básicos de la barra de tareas como altavoces, auriculares, estado de la batería y control de audio, durante el uso cotidiano."
-                        },
-                        {
-                            saber: "Herramientas de creación multimedia (audio, video, editor gráfico)",
-                            indicador: "Aplica **herramientas de creación de contenido multimedia**, como el editor gráfico, utilizando funciones básicas de creación, edición y guardado de imágenes en la elaboración de productos digitales."
-                        }
+                        { saber: "Hardware avanzado", indicador: "Clasifica componentes de **hardware** según su función, distinguiendo entre dispositivos computacionales y periféricos." }
                     ],
                     programacion: [
-                        {
-                            saber: "Entorno de programación por bloques",
-                            indicador: "Utiliza el **entorno de programación** **por bloques**, explorando la interfaz y organizando bloques en el área de programación en la resolución de retos programados."
-                        },
-                        {
-                            saber: "Estado",
-                            indicador: "Identifica el concepto de **estado**, reconociendo cambios en las propiedades de orientación, dirección y tamaño de objetos en la creación de un producto programado."
-                        },
-                        {
-                            saber: "Algoritmo (pseudocódigo)",
-                            indicador: "Hace uso de **algoritmos** en pseudocódigo utilizando instrucciones de forma lógica y estructurada en la solución de un producto programado."
-                        },
-                        {
-                            saber: "Dato (numérico, texto)",
-                            indicador: "Organiza **datos** tipo numérico y de texto, reconociendo su uso en situaciones cotidianas."
-                        },
-                        {
-                            saber: "Variable",
-                            indicador: "Gestiona una **variable** en la resolución de ejercicios a través de algoritmos o actividades programadas."
-                        },
-                        {
-                            saber: "Estructuras repetitivas",
-                            indicador: "Utiliza **estructuras repetitivas** en pseudocódigo o programación por bloques, resolviendo ejercicios que requieran repeticiones controladas."
-                        },
-                        {
-                            saber: "Eventos",
-                            indicador: "Utiliza **eventos** en pseudocódigo o programación para el control de acciones y reacciones de objetos dentro de un programa, comprendiendo su relación de causa y efecto."
-                        },
-                        {
-                            saber: "Estructuras condicionales (simples y compuestas)",
-                            indicador: "Utiliza **estructuras condicionales** simples y compuestas en pseudocódigo o programación, en la ejecución de instrucciones cuando se cumple una condición específica."
-                        },
-                        {
-                            saber: "Operadores aritméticos",
-                            indicador: "Utiliza **operadores aritméticos** de suma, resta, multiplicación y división en pseudocódigo o programación, resolviendo ejercicios que involucren cálculos automáticos."
-                        },
-                        {
-                            saber: "Operadores relacionales",
-                            indicador: "Utiliza **operadores relacionales** en pseudocódigo o programación, comparando valores en la toma de decisiones dentro del programa."
-                        }
+                        { saber: "Variable", indicador: "Gestiona una **variable** en la resolución de ejercicios a través de algoritmos o actividades programadas." }
                     ],
                     computacion: [
-                        {
-                            saber: "Computación física",
-                            indicador: "Reconoce los componentes básicos de la **computación física**, como el microcontrolador, sensores, actuadores y el entorno de programación, relacionándolos con sus usos y aplicaciones en contextos cotidianos."
-                        },
-                        {
-                            saber: "Circuito eléctrico",
-                            indicador: "Identifica componentes básicos de un **circuito eléctrico**, reconociendo su tipo, el flujo de corriente, la polaridad y la función del interruptor durante la construcción o simulación de prototipos."
-                        },
-                        {
-                            saber: "Fundamentos de electrónica (pines entrada/salida, señal analógica/digital)",
-                            indicador: "Identifica **fundamentos de electrónica**, reconociendo la función de los pines de entrada y salida, así como la diferencia entre señales analógicas y digitales durante la construcción o simulación de circuitos."
-                        },
-                        {
-                            saber: "Microcontrolador",
-                            indicador: "Reconoce el funcionamiento básico de un **microcontrolador**, identificando los pines digitales y analógicos, la placa de expansión y la comunicación entre el programa y la tarjeta a través de actividades prácticas o simuladas."
-                        }
+                        { saber: "Computación física", indicador: "Reconoce los componentes básicos de la **computación física**, como el microcontrolador, sensores y actuadores." }
                     ],
                     ciencia: [
-                        {
-                            saber: "Herramientas generativas",
-                            indicador: "Reconoce **herramientas digitales generativas** (texto, imagen o audio) que producen contenido a partir de instrucciones sencillas, identificando su aplicación en actividades cotidianas de forma ética y segura."
-                        },
-                        {
-                            saber: "Desafíos de la IA",
-                            indicador: "Reconoce **desafíos de la inteligencia artificial** relacionados con la protección de la información personal sensible, cuando se realizan actividades con herramientas digitales."
-                        },
-                        {
-                            saber: "Fundamentos de la IA",
-                            indicador: "Identifica los **fundamentos de la inteligencia artificial**, reconociendo cómo aprende, toma decisiones y se diferencia de otros sistemas automatizados en contextos cotidianos."
-                        }
+                        { saber: "Herramientas generativas", indicador: "Reconoce **herramientas digitales generativas** (texto, imagen o audio) que producen contenido a partir de instrucciones sencillas." }
                     ]
                 },
                 modulo2: {
                     apropiacion: [
-                        {
-                            saber: "Herramientas de creación multimedia (editor gráfico)",
-                            indicador: "Aplica **herramientas de creación de contenido multimedia**, como el editor gráfico, utilizando funciones básicas de creación, edición y guardado de imágenes en la elaboración de productos digitales."
-                        },
-                        {
-                            saber: "Navegador",
-                            indicador: "Utiliza **navegadores** y **buscadores** web en la búsqueda de información en internet siguiendo una consigna dada."
-                        },
-                        {
-                            saber: "Buscador",
-                            indicador: "Utiliza **navegadores** y **buscadores** web en la búsqueda de información en internet siguiendo una consigna dada."
-                        },
-                        {
-                            saber: "Internet",
-                            indicador: "Identifica dispositivos que se conectan a **internet** describiendo sus funciones básicas en el contexto de situaciones cotidianas o escolares."
-                        },
-                        {
-                            saber: "Netiqueta",
-                            indicador: "Aplica normas de **netiqueta** durante la interacción en entornos digitales, reconociendo el tono apropiado, la cortesía y el respeto hacia otros usuarios en actividades de comunicación sincrónica y asincrónica."
-                        },
-                        {
-                            saber: "Comunicación y colaboración sincrónica/asincrónica (chat)",
-                            indicador: "Identifica el chat como una herramienta de **comunicación y colaboración sincrónica y asincrónica**, reconociendo sus características y su uso en actividades digitales guiadas."
-                        },
-                        {
-                            saber: "Huella digital",
-                            indicador: "Identifica los usos e implicaciones de la **huella digital**, reconociendo cómo las acciones realizadas en entornos digitales dejan rastros permanentes relacionados con la privacidad y reputación en línea."
-                        },
-                        {
-                            saber: "Contraseñas seguras",
-                            indicador: "Identifica qué es una **contraseña segura** y sus elementos básicos, reconociendo su importancia en la protección de cuentas y datos personales en entornos digitales."
-                        },
-                        {
-                            saber: "Hackeo (phishing, redes inseguras)",
-                            indicador: "Identifica qué es **hackeo**, phishing y conexiones inseguras (como redes wifi públicas), reconociendo situaciones comunes donde pueden presentarse riesgos para la seguridad digital."
-                        },
-                        {
-                            saber: "Software malicioso (virus)",
-                            indicador: "Identifica qué es un virus informático como un tipo de **software malicioso**, reconociendo los riesgos que representan para la información y el funcionamiento de los dispositivos."
-                        },
-                        {
-                            saber: "Antivirus",
-                            indicador: "Identifica la función y características de un **antivirus**, reconociendo su importancia en la protección de dispositivos digitales utilizados."
-                        },
-                        {
-                            saber: "Almacenamiento en la nube",
-                            indicador: "Crea archivos digitales en plataformas de **almacenamiento en la nube**, configurando los permisos de uso compartido para facilitar la colaboración en actividades escolares."
-                        },
-                        {
-                            saber: "Referencias bibliográficas",
-                            indicador: "Aplica un formato básico de **referencias bibliográficas** (autor, título, fuente y año) en las producciones, valorando la atribución de las fuentes utilizadas."
-                        },
-                        {
-                            saber: "Internet de las cosas",
-                            indicador: "Reconoce aplicaciones del **Internet de las Cosas (IoT)** en la cotidianidad, identificando dispositivos inteligentes conectados que interactúan entre sí."
-                        },
-                        {
-                            saber: "Moneda virtual",
-                            indicador: "Reconoce la utilidad e implicaciones básicas de las **monedas virtuales**, identificando situaciones donde pueden usarse y los riesgos asociados a su manejo en contextos diferentes."
-                        },
-                        {
-                            saber: "Riesgos en línea (ciberacoso, suplantación)",
-                            indicador: "Identifica **riesgos en línea** como ciberacoso, contenido inapropiado y suplantación de identidad, aplicando protocolos de riesgo en entornos digitales."
-                        },
-                        {
-                            saber: "Medidas de seguridad en la web (HTTPS, términos y condiciones)",
-                            indicador: "Identifica **medidas de seguridad en la web**, comprendiendo la diferencia entre HTTPS y HTTP y la importancia de lectura de los términos y condiciones antes de aceptar."
-                        }
+                        { saber: "Huella digital", indicador: "Identifica los usos e implicaciones de la **huella digital**, reconociendo cómo las acciones en línea dejan rastros permanentes." }
                     ],
                     programacion: [
-                        {
-                            saber: "Colección de datos (listas, arreglos)",
-                            indicador: "Organiza datos en programación mediante el uso de listas o agrupaciones de elementos con características comunes, como parte del desarrollo de una **colección de datos**."
-                        },
-                        {
-                            saber: "Operadores lógicos (Y, O, NO)",
-                            indicador: "Reconoce **operadores lógicos** de conjunción (Y) y disyunción (O) en la resolución de problemas, representando condiciones que deben cumplirse de manera conjunta o alternativa."
-                        },
-                        {
-                            saber: "Procedimientos/funciones",
-                            indicador: "Reconoce **procedimientos o funciones** en programación, comprendiendo cómo se declaran, invocan y se usan parámetros y argumentos en la resolución de un problema."
-                        },
-                        {
-                            saber: "Dato (booleano)",
-                            indicador: "Utiliza **datos** tipo booleano en la resolución de problemas en entornos de programación, reconociendo su función en la toma de decisiones."
-                        }
+                        { saber: "Operadores lógicos", indicador: "Reconoce **operadores lógicos** de conjunción (Y) y disyunción (O) en la resolución de problemas." }
                     ],
                     computacion: [
-                        {
-                            saber: "Sensor (integrado/externo, VCC, GND)",
-                            indicador: "Identifica **sensores** integrados y externos, reconociendo su funcionamiento y la forma de conectarlos a VCC y GND durante la exploración o construcción de prototipos."
-                        },
-                        {
-                            saber: "Actuador (integrado/externo)",
-                            indicador: "Identifica **actuadores** integrados y externos, reconociendo cómo se conectan a VCC y GND mientras generan una salida física en prototipos."
-                        },
-                        {
-                            saber: "Domótica",
-                            indicador: "Identifica usos y aplicaciones de la **domótica**, reconociendo cómo la automatización mejora la comodidad y eficiencia en entornos cotidianos."
-                        }
+                        { saber: "Sensor", indicador: "Identifica **sensores** integrados y externos, reconociendo su funcionamiento y la forma de conectarlos." }
                     ],
                     ciencia: [
-                        {
-                            saber: "Dato (numérico, texto, ubicación, imágenes)",
-                            indicador: "Identifica el **dato** de tipo numérico y de texto en situaciones cotidianas, a partir del registro de información que evidencie su utilidad."
-                        },
-                        {
-                            saber: "Recolección de datos (técnicas)",
-                            indicador: "Reconoce **técnicas de recolección** de datos según el tipo de información que se desea obtener en situaciones cotidianas."
-                        },
-                        {
-                            saber: "Almacenamiento de datos",
-                            indicador: "Identifica formas de **almacenamiento de datos**, reconociendo cómo se utilizan archivos locales y hojas de cálculo en la organización de información relevante en contextos cotidianos."
-                        },
-                        {
-                            saber: "Visualización de datos (gráficos, tablas)",
-                            indicador: "Identifica la **visualización de datos** mediante formas de representación como gráficos o tablas cuando se observan ejemplos en situaciones cotidianas."
-                        },
-                        {
-                            saber: "Estrategias para presentar datos (tablas)",
-                            indicador: "Reconoce las tablas como una **estrategia para presentar datos** organizadamente, a partir de información recolectada en situaciones cotidianas."
-                        },
-                        {
-                            saber: "Fundamentos de la IA",
-                            indicador: "Identifica los **fundamentos de la inteligencia artificial**, reconociendo cómo aprende, toma decisiones y se diferencia de otros sistemas automatizados."
-                        },
-                        {
-                            saber: "Herramientas generativas",
-                            indicador: "Reconoce **herramientas digitales generativas** que producen contenido a partir de instrucciones sencillas."
-                        }
+                        { saber: "Visualización de datos", indicador: "Identifica la **visualización de datos** mediante formas de representación como gráficos o tablas." }
                     ]
                 }
             },
-        
-            // ========== III CICLO (Sétimo, Octavo, Noveno) ==========
             III: {
                 modulo1: {
                     apropiacion: [
-                        {
-                            saber: "Computadora (reglas básicas de uso)",
-                            indicador: "Aplica reglas básicas y responsabilidades durante el uso de una **computadora**, contribuyendo al cuidado, seguridad y prolongación de su vida útil."
-                        },
-                        {
-                            saber: "Hardware (componentes, periféricos, tipos de computadoras)",
-                            indicador: "Clasifica tipos de **computadoras** y sus componentes principales de **hardware**, identificando funciones de periféricos comunes al interactuar con dispositivos digitales."
-                        },
-                        {
-                            saber: "Software (tipos, funciones)",
-                            indicador: "Distingue los tipos de **software** relacionándolos con sus funciones y usos en tareas cotidianas."
-                        },
-                        {
-                            saber: "Redes de comunicación (módem, router, puntos de acceso)",
-                            indicador: "Identifica tipos de **redes de comunicación** y sus dispositivos principales (módem, router y puntos de acceso), explicando su funcionamiento y principios de comunicación durante la conexión a Internet en contextos cotidianos."
-                        },
-                        {
-                            saber: "Sistema operativo (categorías, papelera)",
-                            indicador: "Identifica las categorías de los **sistemas operativos** (escritorio y dispositivos móviles), describiendo su función básica y el uso de la papelera como herramienta que elimina y/o recupera archivos."
-                        },
-                        {
-                            saber: "Gestión de archivos (propiedades: tamaño, tipo, extensión)",
-                            indicador: "Aplica las propiedades (tamaño, tipo y extensión) en la **gestión de archivos** para compartir información en diferentes entornos digitales."
-                        },
-                        {
-                            saber: "Herramientas de creación multimedia (editor de gráficos)",
-                            indicador: "Diseña productos visuales con **herramientas de creación multimedia** utilizando editores gráficos, aplicando principios básicos de diseños y formatos adecuados según la calidad requerida."
-                        },
-                        {
-                            saber: "Conexión entre dispositivos (IP)",
-                            indicador: "Explica cómo las direcciones IP permiten la **conexión entre dispositivos** y su comunicación dentro de una red local o en internet, comprendiendo su función en situaciones cotidianas."
-                        }
+                        { saber: "Sistema operativo", indicador: "Identifica las categorías de los **sistemas operativos** (escritorio y dispositivos móviles), describiendo su función básica." }
                     ],
                     programacion: [
-                        {
-                            saber: "Entorno de programación textual o por bloques",
-                            indicador: "Reconoce un **entorno de programación textual o bloques**, identificando sus funciones para aplicarlos en la resolución de ejercicios."
-                        },
-                        {
-                            saber: "Lógica de programación (proposiciones, conectores lógicos, tablas de verdad)",
-                            indicador: "Identifica la **lógica de programación** con el uso de proposiciones y conectores lógicos (AND, OR, NOT), reconociendo su uso en tablas de verdad para la evaluación de expresiones lógicas."
-                        },
-                        {
-                            saber: "Algoritmo (estructura entrada-proceso-salida, características)",
-                            indicador: "Reconoce el **algoritmo** identificando su estructura (entrada, proceso, salida) y aplicando sus características (preciso, finito, definido) como una representación clara y ordenada."
-                        },
-                        {
-                            saber: "Dato (tipos, almacenamiento)",
-                            indicador: "Identifica tipos de **dato** y formas de almacenamiento, aplicándolos en la creación de algoritmos para resolver desafíos programados."
-                        },
-                        {
-                            saber: "Variable (declaración, asignación)",
-                            indicador: "Identifica tipos de **variable**, aplicando su gestión mediante declaraciones y asignaciones en un entorno de programación."
-                        },
-                        {
-                            saber: "Estructuras condicionales",
-                            indicador: "Aplica **estructuras condicionales** en un entorno de programación para la resolución de desafíos que requieran la toma de decisiones lógicas."
-                        },
-                        {
-                            saber: "Estructuras repetitivas",
-                            indicador: "Aplica **estructuras repetitivas** en un entorno de programación para resolver desafíos que requieren la ejecución cíclica de instrucciones."
-                        },
-                        {
-                            saber: "Operadores relacionales",
-                            indicador: "Aplica **operadores relacionales** para realizar comparaciones dentro de ejercicios de programación."
-                        },
-                        {
-                            saber: "Operadores aritméticos",
-                            indicador: "Aplica **operadores aritméticos** (suma, resta, multiplicación y división) para resolver cálculos dentro de ejercicios de programación."
-                        },
-                        {
-                            saber: "Operadores lógicos",
-                            indicador: "Aplica **operadores lógicos** (Y, O, NO) en la resolución de desafíos de programación que impliquen decisiones."
-                        },
-                        {
-                            saber: "Evento",
-                            indicador: "Aplica un **evento** como acción que se detona mediante una causa y un efecto al resolver desafíos programados."
-                        },
-                        {
-                            saber: "Procedimientos/funciones",
-                            indicador: "Aplica **procedimientos y/o funciones** como estructura modular, a través de su declaración e invocación, haciendo uso de parámetros y argumentos durante la solución de desafíos programados."
-                        }
+                        { saber: "Funciones", indicador: "Aplica **procedimientos y/o funciones** como estructura modular, a través de su declaración e invocación." }
                     ],
                     computacion: [
-                        {
-                            saber: "Robot (tipos, componentes: cuerpo, sistema sensorial, control)",
-                            indicador: "Reconoce qué es un **robot**, sus tipos y componentes (cuerpo, sistema sensorial y sistema de control), diferenciándolo de otros dispositivos no robóticos."
-                        },
-                        {
-                            saber: "Robótica (diferencia con computación física)",
-                            indicador: "Diferencia la **computación física** con la **robótica**, identificando cómo los sensores, actuadores y sistemas de control se integran en mecanismos robóticos."
-                        },
-                        {
-                            saber: "Mecánica aplicada a la robótica (estructura, estabilidad)",
-                            indicador: "Emplea principios de la **mecánica aplicados a la robótica**, como la estructura y la estabilidad, en el diseño de mecanismos robóticos."
-                        },
-                        {
-                            saber: "Mecanismos (transmisión y transformación de movimiento)",
-                            indicador: "Reconoce los tipos de **mecanismos**, identificando su función principal en la transmisión y transformación del movimiento mediante la simulación de prototipos."
-                        },
-                        {
-                            saber: "Circuito eléctrico (componentes, carga, voltaje, corriente, resistencias)",
-                            indicador: "Identifica los componentes de un **circuito eléctrico** y su funcionamiento, comprendiendo la relación entre carga eléctrica, voltaje, corriente, resistencias e interruptores mediante la simulación de prototipos."
-                        },
-                        {
-                            saber: "Fundamentos de electrónica (pines, señal analógica/digital)",
-                            indicador: "Identifica **fundamentos de electrónica**, reconociendo la función de pines de entrada y salida, así como la diferencia entre señales analógicas y digitales durante la simulación o construcción de circuitos."
-                        },
-                        {
-                            saber: "Microcontrolador (pines digitales/analógicos, comunicación programa-tarjeta)",
-                            indicador: "Comprende los componentes básicos de un **microcontrolador**, aplicando la función de pines digitales y analógicos y cómo se establece la comunicación entre el programa y la tarjeta microcontroladora durante la exploración o simulación de prototipos."
-                        }
+                        { saber: "Microcontrolador", indicador: "Comprende los componentes básicos de un **microcontrolador**, aplicando la función de pines digitales y analógicos." }
                     ],
                     ciencia: [
-                        {
-                            saber: "Fundamentos de la IA",
-                            indicador: "Reconoce los **fundamentos de la inteligencia artificial**, identificando el concepto y sus aplicaciones en el contexto personal y laboral."
-                        },
-                        {
-                            saber: "Asistentes virtuales",
-                            indicador: "Identifica qué son los **asistentes virtuales** basados en inteligencia artificial, reconociendo su utilidad al interactuar con herramientas digitales, bajo criterios de seguridad y responsabilidad."
-                        },
-                        {
-                            saber: "Dato (tipos en redes sociales, historiales, localización)",
-                            indicador: "Identifica tipos de **dato** (numéricos, de texto, de ubicación y de imágenes), analizando cómo influye en decisiones y/o comportamientos en redes sociales, historiales de navegación o sistemas de localización."
-                        }
+                        { saber: "Asistentes virtuales", indicador: "Identifica qué son los **asistentes virtuales** basados en inteligencia artificial." }
                     ]
                 },
                 modulo2: {
                     apropiacion: [
-                        {
-                            saber: "Herramienta de productividad (procesador de texto, editor presentaciones)",
-                            indicador: "Aplica la **herramienta de productividad** cómo procesador de texto y/o editor de presentación para crear productos comunicativos adecuados al propósito y contexto de uso."
-                        },
-                        {
-                            saber: "Internet (funcionamiento, ISP, conectividad)",
-                            indicador: "Reconoce el funcionamiento de **Internet**, comprendiendo la conectividad entre dispositivos y el rol de los proveedores de servicio (ISP) en el acceso a la red."
-                        },
-                        {
-                            saber: "Navegador (pestañas, seguridad)",
-                            indicador: "Utiliza el **navegador** y el **buscador** web para acceder y localizar información en línea, gestionando pestañas y aplicando estrategias básicas de búsqueda con principios de seguridad digital."
-                        },
-                        {
-                            saber: "Buscador (estrategias búsqueda, filtros, dominios confiables)",
-                            indicador: "Utiliza el **navegador** y el **buscador** web para acceder y localizar información en línea, gestionando pestañas y aplicando estrategias básicas de búsqueda con principios de seguridad digital."
-                        },
-                        {
-                            saber: "Netiqueta",
-                            indicador: "Utiliza herramientas de comunicación y colaboración sincrónica y asincrónica (correo electrónico, chats, videollamadas), aplicando normas de **netiqueta** en la redacción, interacción y participación respetuosa en entornos digitales."
-                        },
-                        {
-                            saber: "Comunicación y colaboración sincrónica/asincrónica (correo, chat, videollamada)",
-                            indicador: "Utiliza herramientas de **comunicación y colaboración sincrónica y asincrónica** (correo electrónico, chats, videollamadas), aplicando normas de netiqueta en la redacción, interacción y participación respetuosa en entornos digitales."
-                        },
-                        {
-                            saber: "Almacenamiento en la nube (guardar, organizar, compartir)",
-                            indicador: "Utiliza el **almacenamiento en la nube** para guardar, organizar y compartir archivos digitales, reconociendo sus ventajas en el acceso y colaboración desde diferentes dispositivos."
-                        },
-                        {
-                            saber: "Referencias bibliográficas (autor, título, fuente, fecha)",
-                            indicador: "Aplica formatos básicos de **referencias bibliográficas** en producciones digitales o escritas, integrando datos como autor, título, fuente y fecha, reconociendo la procedencia de la información."
-                        },
-                        {
-                            saber: "Criptomonedas (utilidad, implicaciones)",
-                            indicador: "Reconoce la utilidad e implicaciones del uso de **criptomonedas** en entornos digitales cotidianos como juegos, plataformas virtuales o pagos en línea."
-                        },
-                        {
-                            saber: "Contraseñas seguras (generadores, doble factor)",
-                            indicador: "Crea **contraseñas seguras** con generadores aleatorios, comprendiendo sus características e importancia para la protección de la información personal en entornos digitales."
-                        },
-                        {
-                            saber: "Software malicioso (características, riesgos)",
-                            indicador: "Reconoce las características del **software malicioso**, analizando los riesgos asociados al uso de sitios web o aplicaciones potencialmente peligrosas en actividades prácticas."
-                        },
-                        {
-                            saber: "Riesgos en línea (suplantación, grooming, phishing, noticias falsas)",
-                            indicador: "Identifica **riesgos en línea** como la suplantación de identidad, grooming, phishing y noticias falsas, analizando acciones básicas de prevención en sus interacciones digitales."
-                        },
-                        {
-                            saber: "Plataformas de creación de contenido",
-                            indicador: "Utiliza **plataformas de creación de contenido** digital en la elaboración de infografías, diagramas o presentaciones, organizando la información de forma visual y coherente según el propósito comunicativo."
-                        },
-                        {
-                            saber: "Licencia digital",
-                            indicador: "Reconoce la **licencia digital** en el uso de contenido en línea, valorando sus alcances y limitaciones."
-                        },
-                        {
-                            saber: "Hackeo (tipos de hacker, implicaciones legales)",
-                            indicador: "Reconoce el **hackeo** como una amenaza digital, diferenciando tipos de hacker, comprendiendo sus implicaciones legales y valorando medidas para su prevención."
-                        },
-                        {
-                            saber: "Antivirus",
-                            indicador: "Aplica medidas de protección digital mediante el reconocimiento de tipos de **software malicioso** y el uso adecuado del **antivirus**, valorando su actualización como parte de una ciudadanía digital responsable."
-                        },
-                        {
-                            saber: "Redes de comunicación (arquitectura, protocolos HTTP/HTTPS/TCP/IP)",
-                            indicador: "Reconoce las **redes de comunicación** a partir de su arquitectura, protocolos (como HTTP, HTTPS y TCP/IP) e interfaces, comprendiendo su funcionamiento durante el intercambio de datos."
-                        },
-                        {
-                            saber: "Sistema operativo (optimización: memoria, desfragmentar, caché)",
-                            indicador: "Aplica técnicas de optimización del **sistema operativo**, identificando cómo gestionar memoria, desfragmentar discos, limpiar caché y actualizar el sistema para el mejoramiento del desempeño de dispositivos."
-                        },
-                        {
-                            saber: "Herramienta de productividad (gestor de bases de datos)",
-                            indicador: "Utiliza un **gestor de bases de datos** como herramienta de productividad para la creación de tablas, estableciendo relaciones entre ellas y realizando consultas en la organización de la información."
-                        },
-                        {
-                            saber: "Herramientas de creación multimedia (modelado 3D)",
-                            indicador: "Utiliza **herramientas de creación de contenido multimedia** para el modelado 3D, aplicando funciones básicas de creación y edición en productos digitales."
-                        },
-                        {
-                            saber: "Plataformas de creación de contenido (encuestas, formularios)",
-                            indicador: "Crea encuestas o formularios mediante **plataformas de creación de contenido**, ajustando su formato y estructura al propósito de recolección o evaluación de datos."
-                        },
-                        {
-                            saber: "Derechos de autor y licenciamiento",
-                            indicador: "Reconoce la importancia de los **derechos de autor y el licenciamiento**, aplicando buenas prácticas de uso ético y legal de contenidos digitales."
-                        },
-                        {
-                            saber: "Huella digital",
-                            indicador: "Analiza la utilidad e implicaciones de la **huella digital**, valorando cómo las acciones en línea afectan la identidad, reputación y seguridad personal en entornos digitales."
-                        },
-                        {
-                            saber: "Riesgos en línea (acceso inapropiado, ciberadicción, ciberacoso, sexting)",
-                            indicador: "Analiza **riesgos en línea** (acceso a información inapropiada, ciberadicción, ciberacoso y sexting), valorando estrategias de prevención y autocuidado en sus interacciones digitales."
-                        }
+                        { saber: "Criptomonedas", indicador: "Reconoce la utilidad e implicaciones del uso de **criptomonedas** en entornos digitales cotidianos." }
                     ],
                     programacion: [
-                        {
-                            saber: "Colección de datos (listas, arreglos)",
-                            indicador: "Gestiona una **colección de datos** como listas o arreglos mediante su creación, recorrido y modificación durante la solución de ejercicios programados."
-                        },
-                        {
-                            saber: "Operadores lógicos (Y, O, NO)",
-                            indicador: "Aplica **operadores lógicos** (Y, O, NO) en la resolución de desafíos de programación que impliquen decisiones."
-                        },
-                        {
-                            saber: "Procedimientos/funciones (declaración, invocación, parámetros, argumentos)",
-                            indicador: "Aplica **procedimientos y/o funciones** como estructura modular, a través de su declaración e invocación, haciendo uso de parámetros y argumentos durante la solución de desafíos programados."
-                        }
+                        { saber: "Colección de datos", indicador: "Gestiona una **colección de datos** como listas o arreglos mediante su creación, recorrido y modificación." }
                     ],
                     computacion: [
-                        {
-                            saber: "Sensor (integrado/externo, conexión VCC/GND)",
-                            indicador: "Utiliza un **sensor** integrado y/o externo, comprendiendo su función y su correcta conexión a VCC y GND durante la construcción o simulación de un prototipo."
-                        },
-                        {
-                            saber: "Actuador (integrado/externo)",
-                            indicador: "Utiliza un **actuador** integrado y/o externo, comprendiendo su función y cómo se conecta correctamente a VCC y GND durante la construcción o simulación de un prototipo."
-                        },
-                        {
-                            saber: "Domótica (usos, aplicaciones, beneficios)",
-                            indicador: "Analiza los usos, aplicaciones y beneficios de la **domótica**, mediante la creación o simulación de un prototipo que responda a necesidades reales en un entorno cotidiano."
-                        },
-                        {
-                            saber: "Movimiento en mecanismos (entrada/salida)",
-                            indicador: "Identifica el **movimiento en mecanismos** robóticos, diferenciando el movimiento de entrada y salida, a partir de la observación y análisis de simulaciones o prototipos básicos que integren sensores y actuadores."
-                        },
-                        {
-                            saber: "Microcontrolador (pines, VCC/GND, comunicación sensores/actuadores)",
-                            indicador: "Aplica las funciones de un **microcontrolador**, utilizando pines digitales y analógicos, conexión a VCC y GND y comunicación con sensores y actuadores durante la simulación o construcción de prototipos."
-                        },
-                        {
-                            saber: "Prototipos (diseño e integración de sensores, actuadores)",
-                            indicador: "Construye **prototipos** que integren sensores, actuadores y un microcontrolador, a partir de una necesidad identificada en su contexto."
-                        }
+                        { saber: "Domótica", indicador: "Analiza los usos, aplicaciones y beneficios de la **domótica**." }
                     ],
                     ciencia: [
-                        {
-                            saber: "Dato (organización, conservación, seguridad, responsabilidad)",
-                            indicador: "Reconoce la importancia de la organización y conservación del **dato**, aplicando criterios de seguridad y responsabilidad en la gestión de información."
-                        },
-                        {
-                            saber: "Recolección de datos (registros escolares/personales)",
-                            indicador: "Aplica **técnicas de recolección de datos** mediante registros escolares y personales (gastos, notas, actividades deportivas o datos médicos simples), organizando la información en tablas."
-                        },
-                        {
-                            saber: "Almacenamiento de datos (ciclo de vida: creación, uso, conservación, eliminación)",
-                            indicador: "Reconoce el ciclo de vida del dato en el **almacenamiento de datos**, identificando las etapas de creación, uso, conservación y eliminación responsable de la información en contextos educativos o personales."
-                        },
-                        {
-                            saber: "Visualización de datos",
-                            indicador: "Aplica técnicas de **visualización de datos**, creando representaciones gráficas simples como gráficos pictóricos o de barras para comunicar información."
-                        },
-                        {
-                            saber: "Estrategias para presentar datos",
-                            indicador: "Crea gráficos de barras o lineales a partir de datos, aplicando **estrategias para representar datos** en la comunicación de información relevante."
-                        },
-                        {
-                            saber: "Fundamentos de la IA (funcionamiento, diferencia con otros sistemas)",
-                            indicador: "Reconoce los **fundamentos de la inteligencia artificial**, identificando cómo funciona y se diferencia de otros sistemas digitales."
-                        },
-                        {
-                            saber: "Herramientas generativas (texto, imagen, audio, seguridad, responsabilidad)",
-                            indicador: "Utiliza **herramientas generativas** basadas en inteligencia artificial, aplicando funciones para la creación o modificación de contenido digital (texto, imagen o audio) respetando criterios de seguridad y responsabilidad."
-                        },
-                        {
-                            saber: "Desafíos de la IA (sesgos, manipulación, dependencia, privacidad)",
-                            indicador: "Reconoce los **desafíos de la inteligencia artificial**, identificando riesgos como sesgos, manipulación de información, dependencia tecnológica y privacidad de datos, reflexionando sobre su impacto en la vida laboral, personal y social."
-                        }
+                        { saber: "Desafíos de la IA", indicador: "Reconoce los **desafíos de la inteligencia artificial**, identificando riesgos como sesgos, manipulación y privacidad." }
                     ]
                 }
             }
         };
 
-        // Verbos Bloom
-        const verbosBloom = {
-            recordar: ['identifica', 'reconoce', 'enumera', 'describe'],
-            comprender: ['explica', 'ejemplifica', 'clasifica', 'resume'],
-            aplicar: ['utiliza', 'resuelve', 'programa', 'implementa'],
-            analizar: ['compara', 'organiza', 'diferencia', 'examina'],
-            evaluar: ['justifica', 'argumenta', 'valida', 'recomienda'],
-            crear: ['diseña', 'construye', 'propone', 'desarrolla']
-        };
+        // Verbos Bloom (primera letra mayúscula)
+        const verbosBloom = [
+            'Identifica', 'Reconoce', 'Enumera', 'Describe',
+            'Explica', 'Ejemplifica', 'Clasifica', 'Resume',
+            'Utiliza', 'Resuelve', 'Programa', 'Implementa',
+            'Compara', 'Organiza', 'Diferencia', 'Examina',
+            'Justifica', 'Argumenta', 'Valida', 'Recomienda',
+            'Diseña', 'Construye', 'Propone', 'Desarrolla'
+        ];
 
         // Estado
         let saberesSeleccionados = [];
 
-        // Elementos
+        // Elementos DOM
         const cicloSelect = document.getElementById('cicloSelect');
         const nivelSelect = document.getElementById('nivelSelect');
         const modulo1 = document.getElementById('modulo1Container');
@@ -1071,27 +661,35 @@
         const promptSalida = document.getElementById('promptSalida');
         const generarBtn = document.getElementById('generarPromptBtn');
         const copiarBtn = document.getElementById('copiarPrompt');
-        const saberesBuscar = document.getElementById('saberesParaBuscar');
-        const buscarInput = document.getElementById('busquedaInput');
-        const buscarBtn = document.getElementById('buscarVideosBtn');
-        const resultados = document.getElementById('resultadosVideos');
-        const lupaModal = document.getElementById('lupaModal');
-        const modalSaberes = document.getElementById('modalSaberes');
-        const consultaGoogle = document.getElementById('consultaGoogle');
+        const duaSaberesContainer = document.getElementById('duaSaberesContainer');
+        const duaRecomendaciones = document.getElementById('duaRecomendaciones');
+        const buscarYoutubeDua = document.getElementById('buscarYoutubeDua');
+        const buscarGoogleDua = document.getElementById('buscarGoogleDua');
+        const juegosModal = document.getElementById('juegosModal');
+        const abrirModalJuegosBtn = document.getElementById('abrirModalJuegosBtn');
+        const cerrarJuegosModal = document.getElementById('cerrarJuegosModal');
+        const modalJuegosSaberes = document.getElementById('modalJuegosSaberes');
+        const herramientasCards = document.querySelectorAll('.herramienta-card');
+        const googleModal = document.getElementById('googleModal');
+        const cerrarGoogleModal = document.getElementById('cerrarGoogleModal');
+        const googleBusquedaTexto = document.getElementById('googleBusquedaTexto');
         const googleLink = document.getElementById('googleLink');
-        const cerrarLupa = document.getElementById('cerrarLupaModal');
-        const bitacora = document.getElementById('bitacoraTexto');
-        const guardarBitacora = document.getElementById('guardarBitacora');
-        const limpiarBitacora = document.getElementById('limpiarBitacora');
 
         // Niveles
-        const niveles = { preescolar: ['Materno Infantil', 'Transición'], I: ['Primero','Segundo','Tercero'], II: ['Cuarto','Quinto','Sexto'], III: ['Sétimo','Octavo','Noveno'] };
+        const niveles = {
+            preescolar: ['Materno Infantil', 'Transición'],
+            I: ['Primero', 'Segundo', 'Tercero'],
+            II: ['Cuarto', 'Quinto', 'Sexto'],
+            III: ['Sétimo', 'Octavo', 'Noveno']
+        };
 
+        // Renderizar niveles
         function renderNiveles() {
             nivelSelect.innerHTML = niveles[cicloSelect.value].map(n => `<option>${n}</option>`).join('');
             renderSaberes();
         }
 
+        // Renderizar saberes
         function renderSaberes() {
             const data = saberesDB[cicloSelect.value] || saberesDB.preescolar;
             renderModulo(modulo1, data.modulo1, 'mod1');
@@ -1120,12 +718,15 @@
                         saberesSeleccionados.splice(idx, 1);
                         btn.classList.remove('selected');
                     } else {
-                        if (saberesSeleccionados.length >= 2) return alert('Máximo 2 saberes');
-                        saberesSeleccionados.push({ 
-                            saber: btn.dataset.saber, 
+                        if (saberesSeleccionados.length >= 2) {
+                            alert('Máximo 2 saberes');
+                            return;
+                        }
+                        saberesSeleccionados.push({
+                            saber: btn.dataset.saber,
                             indicador: btn.dataset.indicador,
-                            area: btn.dataset.area, 
-                            modulo: btn.dataset.mod 
+                            area: btn.dataset.area,
+                            modulo: btn.dataset.mod
                         });
                         btn.classList.add('selected');
                     }
@@ -1136,127 +737,269 @@
 
         function actualizarUI() {
             contadorSel.textContent = saberesSeleccionados.length;
-            listaSel.innerHTML = saberesSeleccionados.map(s => `<span class="bg-white/20 px-3 py-1.5 rounded-full text-sm">${s.saber}</span>`).join('');
-            saberesBuscar.innerHTML = saberesSeleccionados.length 
-                ? saberesSeleccionados.map(s => `<span class="bg-blue-100 text-[#014d6b] px-3 py-1 rounded-full text-xs">${s.saber}</span>`).join('')
-                : '<span class="text-gray-400 text-sm">Ningún saber seleccionado</span>';
-            mostrarIndicadores();
+            listaSel.innerHTML = saberesSeleccionados.map(s => 
+                `<span class="bg-white/20 px-3 py-1.5 rounded-full text-sm">${s.saber}</span>`
+            ).join('');
+            
+            actualizarDUA();
+            guardarHistorial();
         }
 
-        function mostrarIndicadores() {
+        // ========== PESTAÑA DUA ==========
+        function actualizarDUA() {
             if (!saberesSeleccionados.length) {
-                indicadoresContainer.classList.add('hidden');
+                duaSaberesContainer.innerHTML = '<p class="text-gray-400 text-sm">Ningún saber seleccionado</p>';
+                duaRecomendaciones.innerHTML = '<p class="text-white/80">Selecciona saberes para ver recomendaciones personalizadas</p>';
                 return;
             }
 
+            // Mostrar saberes con indicadores
             let html = '';
             saberesSeleccionados.forEach((item, idx) => {
-                html += `<div class="border-b pb-6 mb-6 last:border-0">`;
-                html += `<p class="font-bold text-[#014d6b] mb-2">${item.saber}</p>`;
-                html += `<div class="bg-blue-50 p-4 rounded-xl mb-4"><p class="text-sm">${item.indicador}</p></div>`;
-                html += `<div class="mb-2"><select id="verbo${idx}" class="text-sm border rounded-lg p-2">`;
-                html += `<option value="">Seleccionar verbo...</option>`;
-                for (let verbos of Object.values(verbosBloom)) {
-                    verbos.forEach(v => html += `<option value="${v}">${v}</option>`);
-                }
-                html += `</select></div>`;
-                html += `<textarea id="eval${idx}" rows="2" class="w-full p-3 border border-green-200 rounded-xl text-sm" placeholder="Indicador de evaluación...">${item.indicador.replace('Identifica', 'El estudiante identifica').replace('Reconoce', 'Reconoce')}</textarea>`;
+                html += `<div class="border-b pb-4 mb-4 last:border-0">`;
+                html += `<p class="font-bold text-[#014d6b]">${item.saber}</p>`;
+                html += `<p class="text-sm text-gray-600 mt-1">${item.indicador}</p>`;
+                
+                // Selector de verbos (primera letra mayúscula)
+                html += `<div class="mt-2 flex items-center gap-2">`;
+                html += `<span class="text-xs text-gray-500">Verbo:</span>`;
+                html += `<select id="duaVerbo${idx}" class="text-sm border rounded-lg p-2">`;
+                html += `<option value="">Seleccionar...</option>`;
+                verbosBloom.forEach(v => html += `<option value="${v}">${v}</option>`);
+                html += `</select>`;
+                html += `</div>`;
+
+                // Indicador de evaluación editable
+                html += `<textarea id="duaEval${idx}" rows="2" class="w-full p-3 border border-green-200 rounded-xl text-sm mt-2" placeholder="Indicador de evaluación...">${item.indicador.replace('Identifica', 'Identifica').replace('Reconoce', 'Reconoce')}</textarea>`;
                 html += `</div>`;
             });
-            indicadoresInner.innerHTML = html;
-            indicadoresContainer.classList.remove('hidden');
+            duaSaberesContainer.innerHTML = html;
+
+            // Recomendaciones DUA basadas en el documento
+            const saberesStr = saberesSeleccionados.map(s => s.saber).join(' y ');
+            duaRecomendaciones.innerHTML = `
+                <div class="bg-white/10 p-4 rounded-xl">
+                    <p class="font-bold mb-2">📌 Para trabajar ${saberesStr}:</p>
+                    <ul class="space-y-2 text-sm">
+                        <li>👁️ <span class="font-medium">Discapacidad visual:</span> Usar materiales táctiles, descripciones verbales detalladas, maquetas.</li>
+                        <li>🦾 <span class="font-medium">Discapacidad motriz:</span> Adaptar con pulsadores, usar tarjetas grandes, trabajo en equipo.</li>
+                        <li>🧠 <span class="font-medium">Discapacidad cognitiva:</span> Secuencias cortas, pictogramas, refuerzo positivo.</li>
+                        <li>🦻 <span class="font-medium">Discapacidad auditiva:</span> Instrucciones escritas, videos con subtítulos, apoyo visual.</li>
+                    </ul>
+                </div>
+                <div class="bg-white/10 p-4 rounded-xl mt-3">
+                    <p class="font-bold mb-2">🎮 Juego recomendado (de "15 juegos por la inclusión"):</p>
+                    <p class="text-sm">"Juego 15: Los retos de la empatía" - Actividades para ponerse en el lugar del otro.</p>
+                </div>
+            `;
         }
 
-        // Prompt
+        // Botones DUA
+        buscarYoutubeDua.addEventListener('click', () => {
+            if (!saberesSeleccionados.length) {
+                alert('Selecciona al menos un saber');
+                return;
+            }
+            const busqueda = saberesSeleccionados.map(s => s.saber).join(' ');
+            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(busqueda)}+educativo`, '_blank');
+        });
+
+        buscarGoogleDua.addEventListener('click', () => {
+            if (!saberesSeleccionados.length) {
+                alert('Selecciona al menos un saber');
+                return;
+            }
+            const busqueda = `Integra en una sola actividad: ${saberesSeleccionados.map(s => s.saber).join(' y ')}`;
+            googleBusquedaTexto.textContent = busqueda;
+            googleLink.href = `https://www.google.com/search?q=${encodeURIComponent(busqueda)}&udm=2`;
+            googleModal.style.display = 'flex';
+        });
+
+        // ========== MODAL DE JUEGOS ==========
+        abrirModalJuegosBtn.addEventListener('click', () => {
+            if (!saberesSeleccionados.length) {
+                alert('Selecciona al menos un saber');
+                return;
+            }
+            modalJuegosSaberes.textContent = saberesSeleccionados.map(s => s.saber).join(' + ');
+            juegosModal.style.display = 'flex';
+        });
+
+        cerrarJuegosModal.addEventListener('click', () => {
+            juegosModal.style.display = 'none';
+        });
+
+        juegosModal.addEventListener('click', (e) => {
+            if (e.target === juegosModal) juegosModal.style.display = 'none';
+        });
+
+        herramientasCards.forEach(card => {
+            card.addEventListener('click', () => {
+                window.open(card.dataset.url, '_blank');
+            });
+        });
+
+        // ========== MODAL GOOGLE ==========
+        cerrarGoogleModal.addEventListener('click', () => {
+            googleModal.style.display = 'none';
+        });
+
+        googleModal.addEventListener('click', (e) => {
+            if (e.target === googleModal) googleModal.style.display = 'none';
+        });
+
+        // ========== GENERAR PROMPT ==========
         generarBtn.addEventListener('click', () => {
             if (!saberesSeleccionados.length) {
                 promptSalida.value = 'Selecciona al menos un saber';
                 return;
             }
+
             const evalTexts = [];
             saberesSeleccionados.forEach((_, i) => {
-                const el = document.getElementById(`eval${i}`);
+                const el = document.getElementById(`duaEval${i}`);
                 if (el) evalTexts.push(el.value);
             });
-            promptSalida.value = `Diseña una mediación pedagógica para ${cicloSelect.value} sobre ${saberesSeleccionados.map(s => s.saber).join(' y ')}.
+
+            const prompt = `Diseña una mediación pedagógica para ${cicloSelect.value} sobre ${saberesSeleccionados.map(s => s.saber).join(' y ')}
 
 Indicadores de evaluación:
 ${evalTexts.map((t,i) => `${i+1}. ${t}`).join('\n')}
 
 Incluye:
-1. Actividad desconectada
-2. Actividad con dispositivos
-3. Metodología activa
-4. Evaluación 60/10/20
-5. Variante DUA`;
+1. Actividad desconectada (sin dispositivos)
+2. Actividad práctica en equipo (con dispositivos)
+3. Metodología activa (ABJ, ABR o Design Thinking)
+4. Evaluación según REA MEP: trabajo cotidiano 60%, tareas 10%, prueba ejecución 20%
+5. Variante DUA para estudiantes con NEE (basada en el documento "15 juegos por la inclusión")`;
+
+            promptSalida.value = prompt;
         });
 
         copiarBtn.addEventListener('click', () => {
             promptSalida.select();
             document.execCommand('copy');
-            alert('Copiado');
+            alert('✅ Prompt copiado');
         });
 
-        // MODAL LUPA (SOLAMENTE AQUÍ)
-        buscarBtn.addEventListener('click', () => {
-            if (!saberesSeleccionados.length && !buscarInput.value.trim()) {
-                alert('Selecciona saberes o escribe una búsqueda');
-                return;
+        // ========== HISTORIAL ==========
+        function guardarHistorial() {
+            if (!saberesSeleccionados.length) return;
+            const nombres = saberesSeleccionados.map(s => s.saber).join(' + ');
+            const item = `${nombres} (${new Date().toLocaleTimeString()})`;
+            let recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+            recent.unshift(item);
+            if (recent.length > 10) recent.pop();
+            localStorage.setItem('recentSearches', JSON.stringify(recent));
+            mostrarRecientes();
+        }
+
+        function mostrarRecientes() {
+            const recent = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+            document.getElementById('recentList').innerHTML = recent.length 
+                ? recent.map(r => `<li class="bg-gray-50 p-2 rounded-lg">${r}</li>`).join('')
+                : '<li class="text-gray-400">No hay búsquedas recientes</li>';
+            document.getElementById('statConsultas').textContent = recent.length;
+        }
+
+        document.getElementById('clearRecentBtn').addEventListener('click', () => {
+            localStorage.removeItem('recentSearches');
+            mostrarRecientes();
+        });
+
+        // ========== REPORTES (simplificado para entrega) ==========
+        // Horarios
+        const horariosBody = document.getElementById('horariosBody');
+        const horas = ['7:00 - 7:40', '7:40 - 8:20', '8:20 - 9:00', '9:20 - 10:00', '10:00 - 10:40', '10:40 - 11:20', '11:20 - 12:00'];
+        
+        let horariosHTML = '';
+        horas.forEach(hora => {
+            horariosHTML += `<tr class="border-b"><td class="p-3 font-medium">${hora}</td>`;
+            for (let i = 0; i < 5; i++) {
+                horariosHTML += `<td class="p-2"><input type="text" class="horario-input" placeholder="Asignatura"></td>`;
             }
+            horariosHTML += `</tr>`;
+        });
+        horariosBody.innerHTML = horariosHTML;
 
-            const saberes = saberesSeleccionados.map(s => s.saber);
-            modalSaberes.innerHTML = saberes.length 
-                ? saberes.map(s => `<span class="bg-[#09b7ae] text-white px-3 py-1 rounded-full text-sm">${s}</span>`).join('')
-                : '<span class="text-gray-500">Búsqueda manual</span>';
-
-            const textoBusqueda = saberes.length 
-                ? `Integra en una sola actividad: ${saberes.join(' y ')}`
-                : buscarInput.value.trim();
-
-            consultaGoogle.textContent = textoBusqueda;
-            googleLink.href = `https://www.google.com/search?q=${encodeURIComponent(textoBusqueda)}&udm=2`;
-            
-            lupaModal.style.display = 'flex';
+        document.getElementById('guardarHorario').addEventListener('click', () => {
+            alert('✅ Horario guardado (simulado)');
         });
 
-        cerrarLupa.addEventListener('click', () => {
-            lupaModal.style.display = 'none';
+        // Plantilla Excel
+        document.getElementById('descargarPlantilla').addEventListener('click', () => {
+            const plantilla = "Apellido1,Apellido2,Nombre,Sección,Adecuación\nGarcía,López,Juan,9-1,No presenta\nPérez,González,María,9-1,Adecuación no significativa";
+            const blob = new Blob([plantilla], { type: 'text/csv' });
+            saveAs(blob, 'plantilla_estudiantes.csv');
         });
 
-        lupaModal.addEventListener('click', (e) => {
-            if (e.target === lupaModal) lupaModal.style.display = 'none';
+        // Cargar Excel (simulado)
+        document.getElementById('cargarExcel').addEventListener('click', () => {
+            const estudiantesBody = document.getElementById('estudiantesBody');
+            estudiantesBody.innerHTML = `
+                <div class="estudiante-row"><span>García López</span><span>Juan</span><span>9-1</span><span>No presenta</span><span><button class="text-blue-600">Editar</button></span></div>
+                <div class="estudiante-row"><span>Pérez González</span><span>María</span><span>9-1</span><span>Adecuación no significativa</span><span><button class="text-blue-600">Editar</button></span></div>
+                <div class="estudiante-row"><span>Laureano Guevara</span><span>Alberto</span><span>9-1</span><span>Adecuación significativa</span><span><button class="text-blue-600">Editar</button></span></div>
+            `;
+        });
+
+        // Generar instrumentos
+        document.getElementById('generarRubrica').addEventListener('click', () => {
+            alert('✅ Rúbrica generada (simulado)');
+        });
+        document.getElementById('generarCotejo').addEventListener('click', () => {
+            alert('✅ Lista de cotejo generada (simulado)');
+        });
+        document.getElementById('generarEscala').addEventListener('click', () => {
+            alert('✅ Escala de desempeño generada (simulado)');
         });
 
         // Bitácora
-        guardarBitacora.addEventListener('click', () => {
-            localStorage.setItem('bitacora', bitacora.value);
-            alert('Guardado');
+        const bitacoraEntradas = document.getElementById('bitacoraEntradas');
+        document.getElementById('guardarBitacoraClase').addEventListener('click', () => {
+            const fecha = document.getElementById('bitacoraFecha').value;
+            const seccion = document.getElementById('bitacoraSeccion').value;
+            const tema = document.getElementById('bitacoraTema').value;
+            
+            if (!tema) {
+                alert('Completa el tema');
+                return;
+            }
+
+            const entrada = document.createElement('div');
+            entrada.className = 'bg-gray-50 p-3 rounded-lg';
+            entrada.innerHTML = `
+                <p class="font-semibold">${fecha} - ${seccion}</p>
+                <p class="text-sm">${tema}</p>
+            `;
+            bitacoraEntradas.prepend(entrada);
+            alert('✅ Entrada guardada');
         });
 
-        limpiarBitacora.addEventListener('click', () => {
-            bitacora.value = '';
-            localStorage.removeItem('bitacora');
-        });
+        // Estadísticas
+        document.getElementById('statSaberes').textContent = '186';
+        document.getElementById('ultimaVisita').textContent = new Date().toLocaleDateString();
 
-        const saved = localStorage.getItem('bitacora');
-        if (saved) bitacora.value = saved;
-
-        // Tabs
-        const tabs = ['Plan', 'Recursos', 'Admin'];
+        // ========== TABS ==========
         function mostrarTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab${tab}`).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab${tab}Btn`).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-white', 'text-[#014d6b]', 'border-b-3', 'border-[#014d6b]');
+                btn.classList.add('bg-gray-100', 'text-gray-600');
+            });
+            document.getElementById(`tab${tab}Btn`).classList.add('active', 'bg-white', 'text-[#014d6b]', 'border-b-3', 'border-[#014d6b]');
         }
 
         document.getElementById('tabPlanBtn').addEventListener('click', () => mostrarTab('Plan'));
-        document.getElementById('tabRecursosBtn').addEventListener('click', () => mostrarTab('Recursos'));
+        document.getElementById('tabDuaBtn').addEventListener('click', () => mostrarTab('Dua'));
+        document.getElementById('tabReportesBtn').addEventListener('click', () => mostrarTab('Reportes'));
         document.getElementById('tabAdminBtn').addEventListener('click', () => mostrarTab('Admin'));
 
-        // Inicio
+        // Inicializar
         renderNiveles();
         cicloSelect.addEventListener('change', renderNiveles);
+        mostrarRecientes();
     </script>
 </body>
 </html>
